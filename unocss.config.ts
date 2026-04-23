@@ -1,19 +1,30 @@
+import IconIconamoon from "@iconify-json/iconamoon/icons.json";
+import IconLineMd from "@iconify-json/line-md/icons.json";
+import IconMdi from "@iconify-json/mdi/icons.json";
+import IconTabler from "@iconify-json/tabler/icons.json";
+
 import { defineConfig, presetAttributify, presetIcons, transformerDirectives, transformerVariantGroup } from "unocss";
 import {
   presetApplet,
   presetRemRpx,
   transformerAttributify,
 } from "unocss-applet";
-import presetChinese from "unocss-preset-chinese";
 import presetEase from "unocss-preset-ease";
 
-const isApplet = process.env.TARO_ENV !== "h5" ?? false;
+const isApplet = process.env.TARO_ENV !== "h5";
+console.log("[UnoCSS Config] TARO_ENV:", process.env.TARO_ENV, "isApplet:", isApplet);
 
 export default defineConfig({
   presets: [
     presetIcons({
       scale: 1.5,
       warn: true,
+      collections: {
+        "mdi": () => IconMdi,
+        "tabler": () => IconTabler,
+        "line-md": () => IconLineMd,
+        "iconamoon": () => IconIconamoon,
+      },
       extraProperties: {
         "display": "inline-block",
         "vertical-align": "middle",
@@ -23,12 +34,15 @@ export default defineConfig({
      * you can add `presetAttributify()` here to enable unocss attributify mode prompt
      * although preset is not working for applet, but will generate useless css
      */
-    presetChinese(),
+    // presetChinese(), // Temporary disable: Complex quotes cause Syntax Error in Webpack css-loader output
     presetEase(),
-    presetApplet(),
+    isApplet ? presetApplet() : presetApplet(),
     presetAttributify(),
     presetRemRpx({ mode: isApplet ? "rem2rpx" : "rpx2rem" }),
-  ],
+  ].filter(Boolean) as any,
+  // 不再需要手动 postprocess：presetRemRpx 已处理双端单位转换
+  // 小程序: rem → rpx (presetRemRpx mode: rem2rpx)
+  // H5: 保持 rem (presetRemRpx mode: rpx2rem)，由浏览器原生渲染
   shortcuts: {
     // position
     "common-bg": "bg-gray-100 dark:bg-gray-900",
