@@ -120,10 +120,6 @@ export default defineConfig(async (merge) => {
       },
       webpackChain(chain) {
         chain.resolve.plugin("tsconfig-paths").use(TsconfigPathsPlugin);
-        chain.plugin("unocss").use(UnoCSS({
-          // Force UnoCSS Webpack injection to be handled securely as CSS rather than throwing raw AST
-          hmrTopLevelAwait: false,
-        }));
       },
     },
     rn: {

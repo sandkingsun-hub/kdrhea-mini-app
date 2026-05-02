@@ -4,11 +4,11 @@ import { View } from "@tarojs/components";
 import { nextTick, useDidHide, useDidShow, useLaunch } from "@tarojs/taro";
 import { useLaunchOptions } from "taro-hooks";
 import { cache } from "~/cache";
-import { initSRSDK } from "~/sr.config";
+import { initSRSDK } from "~/lib/sr";
 import { fetchAndCacheSystemInfoAsync, updateVersion } from "~/utils";
 import { queryClient } from "./lib/react-query";
 import "@kirklin/reset-css/taro/kirklin.css";
-import "uno.css";
+import "./import-uno";
 import "./app.scss";
 import "event-target-polyfill";
 import "yet-another-abortcontroller-polyfill";
@@ -27,9 +27,7 @@ function App({ children }: PropsWithChildren<any>) {
   useDidShow(() => {
     nextTick(() => {
       fetchAndCacheSystemInfoAsync().then();
-      if (process.env.TARO_ENV !== "h5") {
-        updateVersion();
-      }
+      updateVersion();
     });
   });
 

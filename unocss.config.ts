@@ -1,9 +1,11 @@
+import path from "node:path";
 import IconIconamoon from "@iconify-json/iconamoon/icons.json";
 import IconLineMd from "@iconify-json/line-md/icons.json";
 import IconMdi from "@iconify-json/mdi/icons.json";
-import IconTabler from "@iconify-json/tabler/icons.json";
 
-import { defineConfig, presetAttributify, presetIcons, transformerDirectives, transformerVariantGroup } from "unocss";
+import IconTabler from "@iconify-json/tabler/icons.json";
+import presetRemToPx from "@unocss/preset-rem-to-px";
+import { defineConfig, presetAttributify, presetIcons, presetUno, transformerVariantGroup } from "unocss";
 import {
   presetApplet,
   presetRemRpx,
@@ -36,10 +38,18 @@ export default defineConfig({
      */
     // presetChinese(), // Temporary disable: Complex quotes cause Syntax Error in Webpack css-loader output
     presetEase(),
-    isApplet ? presetApplet() : presetApplet(),
+    isApplet ? presetApplet() : presetUno(),
     presetAttributify(),
-    presetRemRpx({ mode: isApplet ? "rem2rpx" : "rpx2rem" }),
+    isApplet ? presetRemRpx({ mode: "rem2rpx" }) : presetRemToPx({ baseFontSize: 32 }),
   ].filter(Boolean) as any,
+  content: {
+    pipeline: {
+      exclude: [/\.(css|postcss|sass|scss|less|stylus|styl)$/, /node_modules/, /^data:/],
+    },
+    filesystem: [
+      path.resolve(__dirname, "src/**/*.{html,js,ts,jsx,tsx,vue,svelte,astro}"),
+    ],
+  },
   // 不再需要手动 postprocess：presetRemRpx 已处理双端单位转换
   // 小程序: rem → rpx (presetRemRpx mode: rem2rpx)
   // H5: 保持 rem (presetRemRpx mode: rpx2rem)，由浏览器原生渲染
@@ -214,7 +224,7 @@ export default defineConfig({
     },
   },
   transformers: [
-    transformerDirectives(),
+    // transformerDirectives(), // Disabled to prevent Webpack 5 data URI loader bug in H5
     transformerVariantGroup(),
     // Don't change the following order
     transformerAttributify(),
