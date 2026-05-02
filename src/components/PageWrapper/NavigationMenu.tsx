@@ -23,7 +23,7 @@ function MenuButton({ menuButton, homeUrl }: NavigationMenuProps) {
   useEffect(() => {
     const pages = getCurrentPages();
     if (pages.length > 0) {
-      const currentPage = pages[pages.length - 1];
+      const currentPage = pages.at(-1);
       let currentUrl = currentPage?.route || currentPage?.__route__;
 
       // 检查页面是导航条上的路由时，不显示返回和主页按钮
@@ -92,7 +92,7 @@ interface NavigationButtonProps {
 function NavigationButton({ className, icon, onClick, size }: NavigationButtonProps) {
   return (
     <View
-      className={`rounded-full flex items-center justify-center glass-effect shadow-sm transition-all active:scale-95 active:opacity-75 hover-scale press-scale ${className}`}
+      className={`glass-effect hover-scale press-scale flex items-center justify-center rounded-full shadow-sm transition-all active:scale-95 active:opacity-75 ${className}`}
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -101,7 +101,7 @@ function NavigationButton({ className, icon, onClick, size }: NavigationButtonPr
       }}
       onClick={onClick}
     >
-      <View className={`${icon} text-primary-6 text-bold p-[2px]`}></View>
+      <View className={`${icon} text-bold p-[2px] text-primary-6`}></View>
     </View>
   );
 }

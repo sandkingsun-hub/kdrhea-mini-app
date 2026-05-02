@@ -34,9 +34,9 @@ function NavBar({
   return (
     <>
       {/* 实际的导航栏 - 动态样式 */}
-      <View className={`navigation-bar fixed top-0 left-0 right-0 z-800 transition-all duration-300 ${
+      <View className={`navigation-bar fixed left-0 right-0 top-0 z-800 transition-all duration-300 ${
         scrolled ? "backdrop-blur-md bg-white/60" : ""
-      } ${navClassName || ""}`}
+      }  ${navClassName || ""}`}
       >
         <View
           style={{
@@ -52,7 +52,7 @@ function NavBar({
               marginRight: `${horizontalPadding}px`,
             }}
           >
-            <View className={`navigation-bar__title w-full text-ellipsis text-center text-base font-bold font-chinese ${
+            <View className={`navigation-bar__title font-chinese w-full text-ellipsis text-center text-base font-bold ${
               scrolled ? "text-text" : "text-text"
             }`}
             >

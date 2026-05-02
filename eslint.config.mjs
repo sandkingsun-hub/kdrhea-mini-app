@@ -5,6 +5,8 @@ export default kirklin({
     "node/prefer-global/process": "off",
     "no-console": "off",
     "style/multiline-ternary": "off",
+    "e18e/prefer-static-regex": "off",
+    "erasable-syntax-only/enums": "off",
   },
   formatters: {
     /**

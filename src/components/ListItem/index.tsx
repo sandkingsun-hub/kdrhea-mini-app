@@ -12,15 +12,15 @@ function ListItem({
 }) {
   return (
     <View
-      className={`flex items-center justify-between py-2  ${className}`}
+      className={`flex items-center justify-between py-2 ${className}`}
       onClick={onClick}
     >
       <View className="mx-4 flex items-center">
         {IconComponent && (
           <View
-            className={`size-10 rounded-full bg-${color}-1 flex items-center justify-center mr-4 ${iconContainerClassName}`}
+            className={`bg-${color}-1 mr-4 size-10 flex items-center justify-center rounded-full ${iconContainerClassName}`}
           >
-            <View className={`text-${color}-5 ${IconComponent} font-bold text-lg`} />
+            <View className={`text-${color}-5 ${IconComponent} text-lg font-bold`} />
           </View>
         )}
         <View className={`text-text font-bold ${labelClassName}`}>{label}</View>

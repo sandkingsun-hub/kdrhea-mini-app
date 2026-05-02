@@ -60,14 +60,14 @@ export default function BottomActions() {
         >
           {/* 首页图标 */}
           <BottomActionButton
-            className={`${isCurrentTab(PAGES[RouteNames.HOME]) ? "bg-primary-1 text-primary-6" : "text-text"} `}
+            className={`${isCurrentTab(PAGES[RouteNames.HOME]) ? "bg-primary-1 text-primary-6" : "text-text"}  `}
             icon="i-line-md-home-md-alt-twotone"
             onClick={() => handleTabSwitch(RouteNames.HOME)}
             index={0}
           />
           {/* 个人资料页图标 */}
           <BottomActionButton
-            className={`${isCurrentTab(PAGES[RouteNames.PROFILE]) ? "bg-primary-1 text-primary-6" : "text-text"} `}
+            className={`${isCurrentTab(PAGES[RouteNames.PROFILE]) ? "bg-primary-1 text-primary-6" : "text-text"}  `}
             icon="i-iconamoon-profile"
             onClick={() => handleTabSwitch(RouteNames.PROFILE)}
             index={2}
@@ -97,7 +97,7 @@ function BottomActionButton({ className, icon, onClick, index, text }: BottomAct
 
   return (
     <View
-      className={`flex items-center justify-center rounded-full size-10 ${marginClass} ${className}`}
+      className={`size-10 flex items-center justify-center rounded-full ${marginClass}  ${className}`}
       onClick={onClick}
     >
       {icon && <View className={`${icon} text-base`} />}

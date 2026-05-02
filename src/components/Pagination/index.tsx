@@ -63,7 +63,7 @@ const Pagination = memo(({ current, count, onChange }: PaginationProps) => {
   return (
     <View className="flex items-center justify-center gap-2 py-2">
       <View
-        className={`rounded-full p-2 flex items-center justify-center w-8 h-8 will-change-transform ${
+        className={`h-8 w-8 flex items-center justify-center rounded-full p-2 will-change-transform ${
           current === 1
             ? "text-gray-300"
             : "text-primary-5"
@@ -98,7 +98,7 @@ const Pagination = memo(({ current, count, onChange }: PaginationProps) => {
       ))}
 
       <View
-        className={`rounded-full p-2 flex items-center justify-center w-8 h-8 will-change-transform ${
+        className={`h-8 w-8 flex items-center justify-center rounded-full p-2 will-change-transform ${
           current === count
             ? "text-gray-300"
             : "text-primary-5"

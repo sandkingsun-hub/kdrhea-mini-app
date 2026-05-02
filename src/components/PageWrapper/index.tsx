@@ -47,7 +47,7 @@ export default function PageWrapper({
 
   return (
     <ConfigProvider theme={getThemeVars()}>
-      <View className={`page-wrapper flex flex-col h-full min-h-screen ${wrapperBackgroundClass} relative`}>
+      <View className={`page-wrapper h-full min-h-screen flex flex-col ${wrapperBackgroundClass} relative`}>
         {/* 导航栏组件 */}
         {shouldShowNavigation && (
           <Navigation
