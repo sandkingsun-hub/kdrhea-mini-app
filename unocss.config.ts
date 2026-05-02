@@ -53,7 +53,7 @@ export default defineConfig({
     presetEase(),
     isApplet ? presetApplet() : presetUno(),
     presetAttributify(),
-    isApplet ? presetRemRpx({ mode: "rem2rpx" }) : presetRemToPx({ baseFontSize: 32 }),
+    isApplet ? presetRemRpx({ mode: "rem2rpx" }) : presetRemToPx({ baseFontSize: 28 }),
   ].filter(Boolean) as any,
   content: {
     pipeline: {
