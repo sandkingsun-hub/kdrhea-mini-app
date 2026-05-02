@@ -8,7 +8,7 @@ import { initSRSDK } from "~/lib/sr";
 import { fetchAndCacheSystemInfoAsync, updateVersion } from "~/utils";
 import { queryClient } from "./lib/react-query";
 import "@kirklin/reset-css/taro/kirklin.css";
-import "./import-uno";
+import "uno.css";
 import "./app.scss";
 import "event-target-polyfill";
 import "yet-another-abortcontroller-polyfill";
