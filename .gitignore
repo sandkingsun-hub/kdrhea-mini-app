@@ -10,6 +10,9 @@ deploy_versions/
 .rn_temp/
 .swc
 
+# 微信开发者工具本地私有配置（每个开发者机器不同）
+project.private.config.json
+
 ######################
 # Node
 ######################

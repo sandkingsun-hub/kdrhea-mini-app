@@ -1,8 +1,8 @@
 {
-  "miniprogramRoot": "./dist",
-  "projectname": "_boot-taro-react_",
-  "description": "_boot-taro-react_",
-  "appid": "touristappid",
+  "miniprogramRoot": "dist/weapp/",
+  "projectname": "kdrhea-mini-app",
+  "description": "KDRHEA 科迪芮雅小程序 · 老客复购主战场",
+  "appid": "wx915dd777dbed7d65",
   "setting": {
     "urlCheck": false,
     "es6": true,
@@ -11,7 +11,33 @@
     "postcss": false,
     "minified": true,
     "swc": true,
-    "autoAudits": true
+    "autoAudits": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "disableSWC": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
-  "compileType": "miniprogram"
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "cloudbaseRoot": "cloudbase/",
+  "cloudFunctionRoot": "cloudfunctions/",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

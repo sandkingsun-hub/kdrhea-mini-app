@@ -1,9 +1,9 @@
 {
-  "name": "_boot-taro-react_",
-  "version": "1.0.0",
+  "name": "kdrhea-mini-app",
+  "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.33.2",
-  "description": "_boot-taro-react_",
+  "description": "KDRHEA 科迪芮雅小程序 · 老客复购主战场",
   "templateInfo": {
     "name": "default",
     "typescript": true,
