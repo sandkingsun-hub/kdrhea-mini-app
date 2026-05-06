@@ -1,6 +1,10 @@
 import kirklin from "@kirklin/eslint-config";
 
 export default kirklin({
+  ignores: [
+    "cloudfunctions/**",
+    "dist/**",
+  ],
   rules: {
     "node/prefer-global/process": "off",
     "no-console": "off",

@@ -1,0 +1,9 @@
+{
+  "name": "activateOldCustomer",
+  "version": "0.1.0",
+  "description": "老客一次性激活 · 手机号匹配 pending_activation 转入积分账户",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

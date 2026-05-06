@@ -12,15 +12,31 @@ import "./index.scss";
 export default function Index() {
   const [isToggled, setIsToggled] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [cloudResult, setCloudResult] = useState<string>("");
 
   useLoad(() => {
     console.log("Page loaded.");
-    // 检查用户是否已同意隐私政策
     const hasAgreed = cache.getSync("privacyAgreed");
     if (!hasAgreed) {
       setShowPrivacyPolicy(true);
     }
   });
+
+  const testCloudLogin = async () => {
+    setCloudResult("调用中…");
+    try {
+      // @ts-expect-error wx 由微信运行时注入·TS 不识别
+      if (typeof wx === "undefined" || !wx.cloud) {
+        setCloudResult("错误：非小程序环境");
+        return;
+      }
+      // @ts-expect-error wx.cloud.callFunction 由微信注入·见上同理
+      const r = await wx.cloud.callFunction({ name: "login" });
+      setCloudResult(JSON.stringify(r.result, null, 2));
+    } catch (e: any) {
+      setCloudResult(`异常：${e?.message || String(e)}`);
+    }
+  };
 
   // Privacy check
   if (showPrivacyPolicy) {
@@ -49,6 +65,22 @@ export default function Index() {
       shouldShowNavigationMenu={false}
     >
       <View className="p-4 space-y-6">
+        {/* 云函数 login 测试 · MVP 调试用 · 后期清除 */}
+        <View className="rounded-2xl bg-yellow-50 p-3">
+          <View className="mb-2 text-sm text-gray-600">[临时] 云函数 login 测试</View>
+          <View
+            className="rounded-lg bg-primary-6 p-2 text-center text-sm text-white"
+            onClick={testCloudLogin}
+          >
+            点击测试调用 login
+          </View>
+          {cloudResult && (
+            <View className="mt-2 max-h-40 overflow-auto bg-white p-2 text-xs">
+              <Text className="text-xs">{cloudResult}</Text>
+            </View>
+          )}
+        </View>
+
         {/* 用户信息区域 */}
         <View className="flex items-center justify-between" onClick={() => switchTab(RouteNames.PROFILE)}>
           <View className="flex items-center space-x-2">

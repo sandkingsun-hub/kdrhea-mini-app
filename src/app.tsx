@@ -18,6 +18,19 @@ const isSDKEnabled = false;
 
 initSRSDK(isSDKEnabled);
 
+// 微信云开发初始化 · 仅 weapp 环境
+// 环境 ID 见 OB 立项档案 Part 11
+if (process.env.TARO_ENV === "weapp") {
+  // @ts-expect-error wx 全局对象由微信运行时注入·TS 不识别
+  if (typeof wx !== "undefined" && wx.cloud) {
+    // @ts-expect-error wx.cloud 由微信注入·见上同理
+    wx.cloud.init({
+      env: "cloudbase-d2gn8jhapa97d69f3",
+      traceUser: true,
+    });
+  }
+}
+
 function App({ children }: PropsWithChildren<any>) {
   const launchOptions = useLaunchOptions();
   useLaunch(() => {
