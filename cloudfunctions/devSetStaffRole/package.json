@@ -1,0 +1,7 @@
+{
+  "name": "devSetStaffRole",
+  "version": "0.1.0",
+  "description": "[DEV] 设置 user.role · 上线前删除",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

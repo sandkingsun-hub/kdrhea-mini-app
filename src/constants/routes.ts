@@ -1,10 +1,13 @@
 // 页面路由名称枚举
 export enum RouteNames {
   HOME = "HOME",
-  MALL = "MALL",
+  CARE = "CARE", // 诊疗 · 现金 SKU
+  GIFTS = "GIFTS", // 礼遇 · 纯积分 SKU
   PROFILE = "PROFILE",
   SKU_DETAIL = "SKU_DETAIL",
   CHECKOUT = "CHECKOUT",
+  QRCODE = "QRCODE",
+  STAFF_SCANNER = "STAFF_SCANNER",
   PRIVACY_POLICY = "PRIVACY_POLICY",
   USER_AGREEMENT = "USER_AGREEMENT",
   DEVTOOLS = "DEVTOOLS",
@@ -13,10 +16,13 @@ export enum RouteNames {
 // 页面路径常量
 export const PAGES = {
   [RouteNames.HOME]: "/pages/index/index",
-  [RouteNames.MALL]: "/pages/mall/index",
+  [RouteNames.CARE]: "/pages/care/index",
+  [RouteNames.GIFTS]: "/pages/gifts/index",
   [RouteNames.PROFILE]: "/pages/profile/index",
   [RouteNames.SKU_DETAIL]: "/pages/sku-detail/index",
   [RouteNames.CHECKOUT]: "/pages/checkout/index",
+  [RouteNames.QRCODE]: "/pages/qrcode/index",
+  [RouteNames.STAFF_SCANNER]: "/pages/staff/scanner",
   [RouteNames.PRIVACY_POLICY]: "/pages/agreements/privacy-policy",
   [RouteNames.USER_AGREEMENT]: "/pages/agreements/user-agreement",
   [RouteNames.DEVTOOLS]: "/pages/devtools/index",

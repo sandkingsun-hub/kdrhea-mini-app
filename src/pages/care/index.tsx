@@ -1,4 +1,4 @@
-// KDRHEA 商城 · Tab 2 · SKU 浏览 + 分类过滤
+// KDRHEA · Tab 2 · 诊疗 · 现金 SKU（纯积分商品在 GIFTS 礼遇 Tab）
 import { ScrollView, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
@@ -22,8 +22,6 @@ const FILTERS = [
   { key: "service:医美注射", label: "注射" },
   { key: "service:医美抗衰", label: "抗衰" },
   { key: "service:医美光电", label: "光电" },
-  { key: "experience_voucher:", label: "体验" },
-  { key: "physical_gift:", label: "礼品" },
 ];
 
 function fenToYuan(n: number) {
@@ -33,7 +31,7 @@ function formatPoints(n: number) {
   return n.toLocaleString("zh-CN");
 }
 
-export default function Mall() {
+export default function Care() {
   const [active, setActive] = useState(0);
   const [items, setItems] = useState<Sku[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +54,7 @@ export default function Mall() {
     setLoading(true);
     const filter = FILTERS[idx];
     const [type, category] = filter.key.split(":");
-    const params: any = { limit: 50 };
+    const params: any = { limit: 50, pointsOnly: false };
     if (type) {
       params.type = type;
     }
@@ -88,7 +86,7 @@ export default function Mall() {
   };
 
   return (
-    <PageWrapper navTitle="商城" className="h-full bg-kd-paper" shouldShowNavigationMenu={false} shouldShowBottomActions={false}>
+    <PageWrapper navTitle="诊疗" className="h-full bg-kd-paper" shouldShowNavigationMenu={false} shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper pb-24">
         {/* 顶部标题 */}
         <View className="px-5 pb-2 pt-4 text-center">
@@ -99,7 +97,7 @@ export default function Mall() {
             className="mt-1 block text-center"
             style={{ fontSize: "10px", letterSpacing: "0.12em", color: "#937761" }}
           >
-            治疗 · 体验 · 礼品
+            诊疗 · 现金支付 / 积分抵扣
           </Text>
         </View>
 

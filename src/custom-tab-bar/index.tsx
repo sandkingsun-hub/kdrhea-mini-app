@@ -1,11 +1,12 @@
-// KDRHEA 自定义 tabBar · 纯文字 letter-spacing 风
+// KDRHEA 自定义 tabBar · 4 tab · 纯文字 letter-spacing 风
 import { CoverView } from "@tarojs/components";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { useState } from "react";
 
 const TABS = [
   { pagePath: "/pages/index/index", text: "首页", code: "HOME" },
-  { pagePath: "/pages/mall/index", text: "商城", code: "CARE" },
+  { pagePath: "/pages/care/index", text: "诊疗", code: "CARE" },
+  { pagePath: "/pages/gifts/index", text: "礼遇", code: "GIFTS" },
   { pagePath: "/pages/profile/index", text: "我的", code: "ME" },
 ];
 
@@ -60,8 +61,8 @@ export default function CustomTabBar() {
         >
           <CoverView
             style={{
-              fontSize: "22rpx",
-              letterSpacing: "0.32em",
+              fontSize: "20rpx",
+              letterSpacing: "0.28em",
               color: selected === i ? "#3C2218" : "#A98D78",
               fontWeight: selected === i ? 500 : 300,
             }}

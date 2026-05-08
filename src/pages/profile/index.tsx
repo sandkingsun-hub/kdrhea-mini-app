@@ -10,6 +10,7 @@ interface User {
   phone: string | null;
   registeredAt: string;
   activatedFromOldCustomer: boolean;
+  role: string;
 }
 
 interface Account {
@@ -101,6 +102,7 @@ export default function Profile() {
         phone: lg.user.phone,
         registeredAt: lg.user.registeredAt,
         activatedFromOldCustomer: lg.user.activatedFromOldCustomer,
+        role: lg.user.role || "customer",
       });
     }
     const acc = await callCloud("getMyAccount", { logsLimit: 8 });
@@ -350,6 +352,20 @@ export default function Profile() {
             <Text style={{ fontSize: "13px", color: "#3C2218" }}>联系客服</Text>
             <Text style={{ fontSize: "11px", color: "#937761" }}>→</Text>
           </View>
+
+          {/* 员工入口 · 仅 staff/admin 可见 · 客户完全不显示 */}
+          {(user?.role === "staff" || user?.role === "admin") && (
+            <View
+              className="flex items-center justify-between border-b py-4"
+              style={{ borderColor: "#E8DFD4" }}
+              onClick={() => Taro.navigateTo({ url: "/pages/staff/scanner" })}
+            >
+              <Text style={{ fontSize: "13px", color: "#864D39", letterSpacing: "0.08em" }}>
+                STAFF · 员工工具
+              </Text>
+              <Text style={{ fontSize: "11px", color: "#864D39" }}>→</Text>
+            </View>
+          )}
         </View>
 
         {/* footer dev */}

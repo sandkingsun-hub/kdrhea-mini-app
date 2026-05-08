@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "商城",
+  navigationBarTitleText: "礼遇",
 });

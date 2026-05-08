@@ -3,10 +3,13 @@ import { ADAPTED_PAGES, RouteNames } from "~/constants/routes";
 export default defineAppConfig({
   pages: [
     ADAPTED_PAGES[RouteNames.HOME],
-    ADAPTED_PAGES[RouteNames.MALL],
+    ADAPTED_PAGES[RouteNames.CARE],
+    ADAPTED_PAGES[RouteNames.GIFTS],
     ADAPTED_PAGES[RouteNames.PROFILE],
     ADAPTED_PAGES[RouteNames.SKU_DETAIL],
     ADAPTED_PAGES[RouteNames.CHECKOUT],
+    ADAPTED_PAGES[RouteNames.QRCODE],
+    ADAPTED_PAGES[RouteNames.STAFF_SCANNER],
     ADAPTED_PAGES[RouteNames.PRIVACY_POLICY],
     ADAPTED_PAGES[RouteNames.USER_AGREEMENT],
     ADAPTED_PAGES[RouteNames.DEVTOOLS],
@@ -32,8 +35,12 @@ export default defineAppConfig({
         text: "首页",
       },
       {
-        pagePath: ADAPTED_PAGES[RouteNames.MALL],
-        text: "商城",
+        pagePath: ADAPTED_PAGES[RouteNames.CARE],
+        text: "诊疗",
+      },
+      {
+        pagePath: ADAPTED_PAGES[RouteNames.GIFTS],
+        text: "礼遇",
       },
       {
         pagePath: ADAPTED_PAGES[RouteNames.PROFILE],

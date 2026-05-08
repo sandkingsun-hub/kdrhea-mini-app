@@ -1,0 +1,7 @@
+{
+  "name": "staffScanCustomer",
+  "version": "0.1.0",
+  "description": "员工扫客户码后调用·线下消费返利/抵扣/打卡",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

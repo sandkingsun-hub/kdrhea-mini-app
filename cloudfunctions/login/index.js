@@ -41,6 +41,7 @@ exports.main = async (event, context) => {
   const newUser = {
     _openid: openid,
     unionId,
+    role: "customer", // customer / staff / admin · 默认客户
     phone: null,
     phoneHash: null,
     nickname: null,

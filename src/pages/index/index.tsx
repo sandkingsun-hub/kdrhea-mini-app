@@ -71,14 +71,14 @@ export default function Index() {
       });
     }
     // 治疗服务（现金）
-    const sList = await callCloud("listSku", { type: "service", limit: 3 });
+    const sList = await callCloud("listSku", { type: "service", pointsOnly: false, limit: 3 });
     if (sList?.ok) {
       setServices(sList.items);
     }
     // 积分礼品（纯积分）
-    const gList = await callCloud("listSku", { limit: 6 });
+    const gList = await callCloud("listSku", { pointsOnly: true, limit: 4 });
     if (gList?.ok) {
-      setGifts((gList.items as Sku[]).filter(s => s.pointsOnly));
+      setGifts(gList.items);
     }
   };
 
@@ -136,8 +136,11 @@ export default function Index() {
             <Text style={{ fontSize: "11px", letterSpacing: "0.24em", color: "#864D39", fontWeight: 400 }}>
               YOUR  POINTS
             </Text>
-            <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}>
-              扫码核销 →
+            <Text
+              style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}
+              onClick={() => Taro.navigateTo({ url: "/pages/qrcode/index" })}
+            >
+              我的二维码 →
             </Text>
           </View>
           <View className="mt-3 flex items-baseline">
@@ -209,7 +212,7 @@ export default function Index() {
             </Text>
             <Text
               style={{ fontSize: "11px", letterSpacing: "0.12em", color: "#937761" }}
-              onClick={() => Taro.showToast({ title: "全部项目 · 待开发", icon: "none" })}
+              onClick={() => Taro.switchTab({ url: "/pages/care/index" })}
             >
               全部 →
             </Text>
@@ -220,7 +223,7 @@ export default function Index() {
               key={sku._id}
               className="border-b py-4"
               style={{ borderColor: "#E8DFD4" }}
-              onClick={() => Taro.showToast({ title: `${sku.name} · 详情待开发`, icon: "none" })}
+              onClick={() => Taro.navigateTo({ url: `/pages/sku-detail/index?id=${sku._id}` })}
             >
               <View className="flex items-baseline justify-between">
                 <View className="flex-1">
@@ -267,7 +270,10 @@ export default function Index() {
               <Text style={{ fontSize: "11px", letterSpacing: "0.24em", color: "#864D39", fontWeight: 500 }}>
                 GIFTS  ·  积分兑换
               </Text>
-              <Text style={{ fontSize: "11px", letterSpacing: "0.12em", color: "#937761" }}>
+              <Text
+                style={{ fontSize: "11px", letterSpacing: "0.12em", color: "#937761" }}
+                onClick={() => Taro.switchTab({ url: "/pages/gifts/index" })}
+              >
                 全部 →
               </Text>
             </View>
@@ -286,7 +292,7 @@ export default function Index() {
                     borderRadius: "4px",
                     display: "inline-block",
                   }}
-                  onClick={() => Taro.showToast({ title: `${sku.name} 兑换 · 待开发`, icon: "none" })}
+                  onClick={() => Taro.navigateTo({ url: `/pages/sku-detail/index?id=${sku._id}` })}
                 >
                   <Text
                     className="block"
