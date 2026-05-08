@@ -1,0 +1,7 @@
+{
+  "name": "payOrder",
+  "version": "0.1.0",
+  "description": "订单支付（mock）·扣库存+扣积分+触发自消费返+推荐返",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

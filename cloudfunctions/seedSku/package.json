@@ -1,0 +1,9 @@
+{
+  "name": "seedSku",
+  "version": "0.1.0",
+  "description": "[dev] 塞测试 SKU 数据·上线前删除",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

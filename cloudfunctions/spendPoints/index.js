@@ -27,8 +27,9 @@ const DEFAULT_MAX_RATIO = 0.7;
 
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext();
-  const openid = wxContext.OPENID;
+  const callerOpenid = wxContext.OPENID;
   const {
+    targetOpenid,
     delta,
     type,
     refType = null,
@@ -38,6 +39,8 @@ exports.main = async (event) => {
     maxRatio = DEFAULT_MAX_RATIO,
   } = event;
 
+  // 云函数间调用 callerOpenid 为空·必须显式传 targetOpenid
+  const openid = targetOpenid || callerOpenid;
   if (!openid) return { ok: false, code: 'NO_OPENID' };
   if (!Number.isInteger(delta) || delta <= 0) {
     return { ok: false, code: 'INVALID_DELTA', message: 'delta 必须为正整数' };

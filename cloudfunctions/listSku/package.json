@@ -1,0 +1,7 @@
+{
+  "name": "listSku",
+  "version": "0.1.0",
+  "description": "客户端 SKU 列表·按 category/type 过滤·支持分页",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

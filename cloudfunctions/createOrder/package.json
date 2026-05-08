@@ -1,0 +1,7 @@
+{
+  "name": "createOrder",
+  "version": "0.1.0",
+  "description": "提交订单·校验金额/库存/积分余额/抵扣比例·15 分钟超时",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

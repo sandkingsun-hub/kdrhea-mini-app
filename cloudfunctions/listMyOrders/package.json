@@ -1,0 +1,7 @@
+{
+  "name": "listMyOrders",
+  "version": "0.1.0",
+  "description": "我的订单列表·按 status 过滤",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}
