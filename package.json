@@ -134,6 +134,7 @@
     "event-target-polyfill": "^0.0.4",
     "lodash-es": "^4.18.1",
     "pinyin-pro": "3.28.1",
+    "qrcode-generator": "^2.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sass": "~1.79.5",
