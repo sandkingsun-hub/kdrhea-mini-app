@@ -12,7 +12,6 @@ import "./index.scss";
 export default function Index() {
   const [isToggled, setIsToggled] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
-  const [cloudResult, setCloudResult] = useState<string>("");
 
   useLoad(() => {
     console.log("Page loaded.");
@@ -21,41 +20,6 @@ export default function Index() {
       setShowPrivacyPolicy(true);
     }
   });
-
-  const callCloud = async (name: string, data?: any) => {
-    setCloudResult(`调用 ${name}…`);
-    try {
-      // @ts-expect-error wx 由微信运行时注入·TS 不识别
-      if (typeof wx === "undefined" || !wx.cloud) {
-        setCloudResult("错误：非小程序环境");
-        return;
-      }
-      // @ts-expect-error wx.cloud.callFunction 由微信注入·见上同理
-      const r = await wx.cloud.callFunction({ name, data });
-      const body = JSON.stringify(r.result, null, 2);
-      setCloudResult(`[${name}]\n${body}`);
-      console.log(`[${name}] result:`, r.result);
-    } catch (e: any) {
-      const msg = `异常 ${name}: ${e?.message || String(e)}`;
-      setCloudResult(msg);
-      console.error(msg, e);
-    }
-  };
-
-  const testCloudLogin = () => callCloud("login");
-  const testEarn500 = () =>
-    callCloud("earnPoints", {
-      delta: 500,
-      type: "earn_self_consume",
-      description: "[测试] 自消费返 500 积分",
-    });
-  const testSpend200 = () =>
-    callCloud("spendPoints", {
-      delta: 200,
-      type: "spend_deduct",
-      description: "[测试] 消费抵扣 200 积分",
-    });
-  const testGetMyAccount = () => callCloud("getMyAccount", { logsLimit: 10 });
 
   // Privacy check
   if (showPrivacyPolicy) {
@@ -84,40 +48,12 @@ export default function Index() {
       shouldShowNavigationMenu={false}
     >
       <View className="p-4 space-y-6">
-        {/* 云函数测试卡片 · MVP 调试用 · 后期清除 */}
-        <View className="rounded-2xl bg-yellow-50 p-3">
-          <View className="mb-2 text-sm text-gray-600">[临时] 云函数测试面板</View>
-          <View className="grid grid-cols-2 gap-2">
-            <View
-              className="rounded-lg bg-primary-6 p-2 text-center text-xs text-white"
-              onClick={testCloudLogin}
-            >
-              login
-            </View>
-            <View
-              className="rounded-lg bg-green-500 p-2 text-center text-xs text-white"
-              onClick={testEarn500}
-            >
-              +500 (earn)
-            </View>
-            <View
-              className="rounded-lg bg-orange-500 p-2 text-center text-xs text-white"
-              onClick={testSpend200}
-            >
-              -200 (spend)
-            </View>
-            <View
-              className="rounded-lg bg-purple-500 p-2 text-center text-xs text-white"
-              onClick={testGetMyAccount}
-            >
-              查 myAccount
-            </View>
-          </View>
-          {cloudResult && (
-            <View className="mt-2 max-h-40 overflow-auto bg-white p-2 text-xs">
-              <Text className="text-xs">{cloudResult}</Text>
-            </View>
-          )}
+        {/* 开发者工具入口 · 仅 dev 阶段·上线前删除 */}
+        <View
+          className="rounded-lg bg-gray-100 p-2 text-center text-xs text-gray-500"
+          onClick={() => Taro.navigateTo({ url: "/pages/devtools/index" })}
+        >
+          ⚙️ 开发者工具（dev only）
         </View>
 
         {/* 用户信息区域 */}

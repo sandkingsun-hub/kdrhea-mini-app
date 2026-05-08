@@ -29,24 +29,30 @@ async function getPhoneFromCode(code) {
   return res.phoneInfo && (res.phoneInfo.purePhoneNumber || res.phoneInfo.phoneNumber);
 }
 
-exports.main = async (event, context) => {
+exports.main = async (event) => {
   const wxContext = cloud.getWXContext();
   const openid = wxContext.OPENID;
-  const { phoneCode } = event;
+  // __test_phone：dev 旁路·允许直接传明文手机号·跳过微信 OpenAPI
+  // 上线前移除！
+  const { phoneCode, __test_phone } = event;
 
   if (!openid) {
     return { ok: false, code: "NO_OPENID" };
   }
-  if (!phoneCode) {
-    return { ok: false, code: "MISSING_PHONE_CODE" };
-  }
 
-  // 1. 拿手机号
   let phone;
-  try {
-    phone = await getPhoneFromCode(phoneCode);
-  } catch (e) {
-    return { ok: false, code: "GET_PHONE_FAILED", error: String(e) };
+  if (__test_phone) {
+    console.warn("[DEV] using __test_phone bypass:", __test_phone);
+    phone = String(__test_phone);
+  } else {
+    if (!phoneCode) {
+      return { ok: false, code: "MISSING_PHONE_CODE" };
+    }
+    try {
+      phone = await getPhoneFromCode(phoneCode);
+    } catch (e) {
+      return { ok: false, code: "GET_PHONE_FAILED", error: String(e) };
+    }
   }
   if (!phone) {
     return { ok: false, code: "EMPTY_PHONE" };

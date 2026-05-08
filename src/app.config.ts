@@ -6,6 +6,7 @@ export default defineAppConfig({
     ADAPTED_PAGES[RouteNames.PROFILE],
     ADAPTED_PAGES[RouteNames.PRIVACY_POLICY],
     ADAPTED_PAGES[RouteNames.USER_AGREEMENT],
+    ADAPTED_PAGES[RouteNames.DEVTOOLS],
   ],
   window: {
     // 微信全局设置自定义导航栏
