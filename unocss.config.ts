@@ -72,7 +72,34 @@ export default defineConfig({
     "flex-y-center": "flex items-center",
   },
   theme: {
+    fontFamily: {
+      // 中文衬线 fallback：iOS Songti SC / Android Noto Serif SC / 系统宋体
+      serif: "\"Songti SC\", \"Noto Serif SC\", \"STSong\", \"FangSong\", \"Times New Roman\", serif",
+      // 中文 sans fallback：iOS PingFang SC / Android Noto Sans SC
+      sans: "\"PingFang SC\", \"Noto Sans SC\", system-ui, -apple-system, \"Helvetica Neue\", sans-serif",
+      // display = serif（小程序里没有 Cormorant Garamond·只能用衬线 fallback）
+      display: "\"Songti SC\", \"Noto Serif SC\", \"STSong\", \"FangSong\", \"Times New Roman\", serif",
+    },
     colors: {
+      // === KDRHEA 品牌色 · 同步官网 globals.css ===
+      kd: {
+        "paper": "#FBF7F1", // 米白底（不用纯白）
+        "paper-alt": "#FAF7F3",
+        "ink-deep": "#1F1410", // 高对比黑
+        "hairline": "#E8DFD4", // 边线
+        "brown": {
+          50: "#FBF7F1",
+          100: "#F5EDE3",
+          200: "#EBDFD1",
+          300: "#DCC9B6",
+          400: "#C4AD98",
+          500: "#A98D78",
+          600: "#937761",
+          700: "#864D39",
+          800: "#5E3425",
+          900: "#3C2218",
+        },
+      },
       gray: {
         1: "var(--gray-1)",
         2: "var(--gray-2)",

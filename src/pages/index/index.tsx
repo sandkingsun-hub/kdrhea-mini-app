@@ -1,6 +1,6 @@
-import { Avatar, Tag } from "@taroify/core";
-import { Image, Text, View } from "@tarojs/components";
-import Taro, { useLoad } from "@tarojs/taro";
+// KDRHEA 小程序首页 · 品牌调性同官网（米白底 + 棕色 + 衬线 hero）
+import { Text, View } from "@tarojs/components";
+import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import { cache } from "~/cache";
 import PageWrapper from "~/components/PageWrapper";
@@ -9,172 +9,320 @@ import { RouteNames } from "~/constants/routes";
 import { switchTab } from "~/utils/route";
 import "./index.scss";
 
+interface Account {
+  balance: number;
+  totalEarned: number;
+  pendingPoints: number;
+}
+
+interface Sku {
+  _id: string;
+  name: string;
+  category: string;
+  priceFen: number;
+  pointsOnly: boolean;
+  pointsRequired: number;
+  type: string;
+}
+
+function formatPoints(n: number): string {
+  return n.toLocaleString("zh-CN");
+}
+
+function fenToYuan(n: number): string {
+  return (n / 100).toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
 export default function Index() {
-  const [isToggled, setIsToggled] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [skus, setSkus] = useState<Sku[]>([]);
+
+  const callCloud = async (name: string, data?: any): Promise<any> => {
+    try {
+      // @ts-expect-error wx 由微信运行时注入·TS 不识别
+      if (typeof wx === "undefined" || !wx.cloud) {
+        return null;
+      }
+      // @ts-expect-error wx.cloud.callFunction 由微信注入
+      const r = await wx.cloud.callFunction({ name, data });
+      return r.result;
+    } catch {
+      return null;
+    }
+  };
+
+  const loadHome = async () => {
+    // login 同时·拉账户和 SKU
+    await callCloud("login");
+    const acc = await callCloud("getMyAccount", { logsLimit: 1 });
+    if (acc?.ok && acc.account) {
+      setAccount({
+        balance: acc.account.balance,
+        totalEarned: acc.account.totalEarned,
+        pendingPoints: acc.account.pendingPoints,
+      });
+    }
+    const list = await callCloud("listSku", { limit: 4 });
+    if (list?.ok) {
+      setSkus(list.items);
+    }
+  };
 
   useLoad(() => {
-    console.log("Page loaded.");
     const hasAgreed = cache.getSync("privacyAgreed");
     if (!hasAgreed) {
       setShowPrivacyPolicy(true);
     }
+    loadHome();
   });
 
-  // Privacy check
+  useDidShow(() => {
+    // 切回首页时刷新账户余额
+    if (!showPrivacyPolicy) {
+      loadHome();
+    }
+  });
+
   if (showPrivacyPolicy) {
     return (
-      <PageWrapper
-        navTitle="Boot Taro React"
-        className="h-full"
-        shouldShowBottomActions={false}
-      >
-        {/* 隐私政策弹窗 */}
+      <PageWrapper navTitle="KDRHEA" className="h-full" shouldShowBottomActions={false}>
         <PrivacyPolicyPopup
           open={showPrivacyPolicy}
-          onClose={() => setShowPrivacyPolicy(false)}
+          onClose={() => {
+            setShowPrivacyPolicy(false);
+            loadHome();
+          }}
         />
       </PageWrapper>
     );
   }
-  const toggleSwitch = () => {
-    setIsToggled(prev => !prev);
-  };
 
   return (
     <PageWrapper
-      navTitle="Boot Taro React"
-      className="h-full"
+      navTitle="KDRHEA"
+      className="h-full bg-kd-paper"
       shouldShowNavigationMenu={false}
     >
-      <View className="p-4 space-y-6">
-        {/* 开发者工具入口 · 仅 dev 阶段·上线前删除 */}
+      <View className="min-h-screen bg-kd-paper pb-12">
+        {/* === 品牌头部 · KDRHEA letter-spacing 标题 === */}
+        <View className="px-6 pb-8 pt-12 text-center">
+          <Text
+            className="kd-eyebrow block"
+            style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#937761" }}
+          >
+            K  D  R  H  E  A
+          </Text>
+          <Text
+            className="kd-display mt-3 block"
+            style={{
+              fontSize: "13px",
+              letterSpacing: "0.18em",
+              color: "#937761",
+              fontWeight: 300,
+            }}
+          >
+            CLINIC · 徐州
+          </Text>
+        </View>
+
+        {/* === Hero · 衬线大字问候 === */}
+        <View className="px-6 pb-10 pt-4">
+          <Text
+            className="kd-hero block"
+            style={{
+              fontFamily: "var(--kd-font-display)",
+              fontSize: "32px",
+              lineHeight: "1.15",
+              color: "#3C2218",
+              fontWeight: 400,
+            }}
+          >
+            在这里，
+          </Text>
+          <Text
+            className="kd-hero block"
+            style={{
+              fontFamily: "var(--kd-font-display)",
+              fontSize: "32px",
+              lineHeight: "1.15",
+              color: "#3C2218",
+              fontWeight: 400,
+            }}
+          >
+            被温柔以待。
+          </Text>
+          <Text
+            className="kd-meta mt-4 block"
+            style={{ fontSize: "12px", letterSpacing: "0.16em", color: "#A98D78", fontWeight: 300 }}
+          >
+            A place quietly attentive.
+          </Text>
+        </View>
+
+        {/* === hairline 分隔 === */}
         <View
-          className="rounded-lg bg-gray-100 p-2 text-center text-xs text-gray-500"
-          onClick={() => Taro.navigateTo({ url: "/pages/devtools/index" })}
-        >
-          ⚙️ 开发者工具（dev only）
-        </View>
+          style={{ height: "1px", background: "#E8DFD4", marginLeft: "24px", marginRight: "24px" }}
+        />
 
-        {/* 用户信息区域 */}
-        <View className="flex items-center justify-between" onClick={() => switchTab(RouteNames.PROFILE)}>
-          <View className="flex items-center space-x-2">
-            <View className="wave-hand text-2xl">👋</View>
-            <View className="text-lg text-gray-800 font-medium">你好, 开发者</View>
-          </View>
-          <Avatar src="https://avatars.githubusercontent.com/u/17453452?v=4" size="large" />
-        </View>
-
-        <View className="mb-4 text-lg text-gray-600 font-medium">
-          欢迎使用Boot Taro React模板
-        </View>
-
-        {/* 功能卡片区域 */}
-        <View className="flex space-x-4">
-          {/* 示例卡片1 */}
-          <View className="flex-1 rounded-2xl bg-primary-6 p-4 shadow-sm" onClick={() => switchTab(RouteNames.HOME)}>
-            <View className="mb-4 text-lg text-white font-medium">示例卡片1</View>
-            <Avatar.Group>
-              {[1, 2, 3].map(i => (
-                <Avatar key={i} src={`https://avatars.githubusercontent.com/u/17453452?v=${i}`} />
-              ))}
-            </Avatar.Group>
-            <View className="mt-2 text-sm text-white">
-              这里可以放一些统计信息
-            </View>
-          </View>
-
-          {/* 示例卡片2 */}
-          <View className="flex-1 space-y-4">
-            <View className="rounded-2xl bg-white p-4 shadow-sm">
-              <View className="mb-2 flex items-center justify-between">
-                <View className="flex items-center">
-                  <View className="mr-2 h-8 w-8 flex items-center justify-center rounded-full bg-white">
-                    <View className="i-mdi-cog text-lg text-purple-500" />
-                  </View>
-                  <Text className="text-base text-gray-800 font-medium">示例开关</Text>
-                </View>
-              </View>
-              {/* 自定义 Toggle 开关
-                   - 轨道: h-6 w-12 p-1 → weapp 下为 48rpx × 96rpx，内边距 8rpx
-                   - 滑块: h-4 w-4 → weapp 下为 32rpx × 32rpx
-                   - 背景色根据 isToggled 状态动态切换，提供开/关视觉反馈
-                   - translateX 使用 Taro.pxTransform 保证 weapp/H5 双端单位兼容 */}
-              <View className="mb-2 flex justify-center">
-                {/* 轨道：开启时蓝色(bg-primary-6)，关闭时灰色(bg-gray-200) */}
-                <View
-                  className={`h-6 w-12 cursor-pointer rounded-full p-1 transition-all duration-300 ${isToggled ? "bg-primary-6" : "bg-gray-200"}`}
-                  onClick={toggleSwitch}
-                >
-                  {/* 滑块：滑动距离 = 轨道内宽(96-8×2) - 滑块宽(32) = 48rpx
-                       Taro.pxTransform(48) 会根据 designWidth=750 自动转换:
-                       - weapp → 48rpx
-                       - H5 → 对应 rem 值 */}
-                  <View
-                    className="h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out"
-                    style={{ transform: isToggled ? `translateX(${Taro.pxTransform(48)})` : "translateX(0)" }}
-                  />
-                </View>
-              </View>
-              <Text className="text-center text-xs text-gray-600">这是一个示例开关</Text>
-            </View>
-
-            <View className="rounded-2xl bg-white p-4 shadow-sm" onClick={() => switchTab(RouteNames.HOME)}>
-              <View className="mb-2 flex items-center justify-between">
-                <View className="flex items-center">
-                  <View className="mr-2 h-8 w-8 flex items-center justify-center rounded-full bg-white">
-                    <View className="i-mdi-card text-lg text-green-500" />
-                  </View>
-                  <Text className="text-base text-gray-800 font-medium">示例功能卡片</Text>
-                </View>
-              </View>
-              <Text className="text-center text-xs text-gray-600">点击查看示例</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* 示例列表区域 */}
-        <View className="">
-          <View className="mb-4 flex items-center justify-between">
-            <View className="text-lg text-gray-800 font-medium">
-              <Text className="mr-1">示例列表</Text>
-              <Tag color="primary" shape="rounded">
-                3
-              </Tag>
-            </View>
-            <View
-              className="rounded-full text-sm text-blue-500 font-medium"
-              onClick={() => switchTab(RouteNames.HOME)}
+        {/* === 我的积分卡 · 极简 hairline 边 === */}
+        {account && (
+          <View className="mt-8 px-6">
+            <Text
+              className="kd-eyebrow mb-4 block"
+              style={{ fontSize: "11px", letterSpacing: "0.24em", color: "#937761" }}
             >
-              查看全部
-            </View>
-          </View>
-          <View className="relative m-0" style={{ height: Taro.pxTransform(230) }}>
-            {[1, 2, 3].map((item, index) => (
-              <View
-                key={item}
-                className="absolute w-full"
+              YOUR  POINTS
+            </Text>
+            <View className="flex items-baseline">
+              <Text
+                className="kd-display"
                 style={{
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  transform: `translateY(${Taro.pxTransform(index * 70)}) scale(${1 - index * 0.04})`,
-                  zIndex: 4 - index,
+                  fontFamily: "var(--kd-font-display)",
+                  fontSize: "44px",
+                  lineHeight: "1",
+                  color: "#3C2218",
+                  fontWeight: 400,
                 }}
               >
-                <View className="flex items-center rounded-xl bg-gray-100 p-4 shadow-lg">
-                  <Image className="mr-2 h-8 w-8 rounded-full" src={`https://avatars.githubusercontent.com/u/17453452?v=${item}`} />
+                {formatPoints(account.balance)}
+              </Text>
+              <Text
+                className="ml-3"
+                style={{ fontSize: "13px", color: "#937761", fontWeight: 300 }}
+              >
+                ≈ ¥
+                {fenToYuan(account.balance)}
+              </Text>
+            </View>
+            {account.pendingPoints > 0 && (
+              <Text
+                className="kd-meta mt-2 block"
+                style={{ fontSize: "11px", letterSpacing: "0.12em", color: "#A98D78" }}
+              >
+                {formatPoints(account.pendingPoints)}
+                {" "}
+                积分待结算
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* === 推荐项目 · 列表式排版 === */}
+        {skus.length > 0 && (
+          <View className="mt-12 px-6">
+            <View className="mb-6 flex items-baseline justify-between">
+              <Text
+                className="kd-eyebrow"
+                style={{ fontSize: "11px", letterSpacing: "0.24em", color: "#937761" }}
+              >
+                CARE  ·  TREATMENTS
+              </Text>
+              <Text
+                style={{ fontSize: "11px", letterSpacing: "0.12em", color: "#937761" }}
+                onClick={() => switchTab(RouteNames.HOME)}
+              >
+                全部 →
+              </Text>
+            </View>
+
+            {skus.map(sku => (
+              <View
+                key={sku._id}
+                className="border-b py-5"
+                style={{ borderColor: "#E8DFD4" }}
+              >
+                <View className="flex items-baseline justify-between">
                   <View className="flex-1">
-                    <View className="text-gray-800 font-medium">
-                      示例项目
-                      {item}
-                    </View>
-                    <View className="truncate text-gray-600">这是一个示例项目描述</View>
+                    <Text
+                      className="kd-display block"
+                      style={{
+                        fontFamily: "var(--kd-font-display)",
+                        fontSize: "18px",
+                        lineHeight: "1.3",
+                        color: "#3C2218",
+                        fontWeight: 400,
+                      }}
+                    >
+                      {sku.name}
+                    </Text>
+                    <Text
+                      className="kd-meta mt-1 block"
+                      style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}
+                    >
+                      {sku.category}
+                    </Text>
+                  </View>
+                  <View className="ml-4 text-right">
+                    {sku.pointsOnly
+                      ? (
+                          <Text
+                            style={{
+                              fontFamily: "var(--kd-font-display)",
+                              fontSize: "16px",
+                              color: "#864D39",
+                              fontWeight: 400,
+                            }}
+                          >
+                            {formatPoints(sku.pointsRequired)}
+                          </Text>
+                        )
+                      : (
+                          <Text
+                            style={{
+                              fontFamily: "var(--kd-font-display)",
+                              fontSize: "16px",
+                              color: "#3C2218",
+                              fontWeight: 400,
+                            }}
+                          >
+                            ¥
+                            {fenToYuan(sku.priceFen)}
+                          </Text>
+                        )}
                   </View>
                 </View>
               </View>
             ))}
           </View>
+        )}
+
+        {/* === 品牌价值主张 · 类似官网 BrandStory 一行 === */}
+        <View className="mt-16 px-6 text-center">
+          <Text
+            className="kd-lede block"
+            style={{
+              fontFamily: "var(--kd-font-display)",
+              fontSize: "16px",
+              lineHeight: "1.7",
+              color: "#5E3425",
+              fontWeight: 300,
+            }}
+          >
+            是医疗，更是美学的深耕。
+          </Text>
+          <Text
+            className="kd-lede mt-2 block"
+            style={{
+              fontFamily: "var(--kd-font-display)",
+              fontSize: "16px",
+              lineHeight: "1.7",
+              color: "#5E3425",
+              fontWeight: 300,
+            }}
+          >
+            是定制，更是安全的承诺。
+          </Text>
+        </View>
+
+        {/* === footer dev 入口 · 灰极小 === */}
+        <View className="mt-16 px-6 text-center">
+          <Text
+            style={{ fontSize: "10px", letterSpacing: "0.12em", color: "#C4AD98" }}
+            onClick={() => Taro.navigateTo({ url: "/pages/devtools/index" })}
+          >
+            ⚙ developer · dev only
+          </Text>
         </View>
       </View>
     </PageWrapper>

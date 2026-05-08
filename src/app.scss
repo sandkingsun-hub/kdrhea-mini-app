@@ -10,6 +10,26 @@
 //       - H5:    page, :root { ... }（:root 确保变量被全局继承）
 // ============================================================
 @mixin design-tokens {
+  // === KDRHEA 品牌色 · 同步官网 globals.css ===
+  --kd-paper: #fbf7f1;
+  --kd-paper-alt: #faf7f3;
+  --kd-ink-deep: #1f1410;
+  --kd-hairline: #e8dfd4;
+  --kd-brown-50: #fbf7f1;
+  --kd-brown-100: #f5ede3;
+  --kd-brown-200: #ebdfd1;
+  --kd-brown-300: #dcc9b6;
+  --kd-brown-400: #c4ad98;
+  --kd-brown-500: #a98d78;
+  --kd-brown-600: #937761;
+  --kd-brown-700: #864d39;
+  --kd-brown-800: #5e3425;
+  --kd-brown-900: #3c2218;
+
+  // KDRHEA 字体（小程序里 Google Fonts 加载不了·用系统字体 fallback）
+  --kd-font-display: "Songti SC", "Noto Serif SC", "STSong", "FangSong", "Times New Roman", serif;
+  --kd-font-sans: "PingFang SC", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+
   // Color Palette
   --black: #000;
   --white: #fff;
@@ -54,8 +74,8 @@
   --gradient-red: linear-gradient(to right, #ff6034, #ee0a24);
   --gradient-orange: linear-gradient(to right, #ffd01e, #ff8917);
 
-  /* Component Colors */
-  --primary-color: var(--blue);
+  /* Component Colors · 默认 primary 切到 KDRHEA 棕色 */
+  --primary-color: var(--kd-brown-800);
   --primary-color-1: var(--blue-1);
   --primary-color-2: var(--blue-2);
   --primary-color-3: var(--blue-3);
@@ -69,12 +89,12 @@
   --success-color: var(--green);
   --danger-color: var(--red);
   --warning-color: var(--orange);
-  --text-color: #333;
-  --active-color: var(--gray-2);
+  --text-color: var(--kd-brown-900);
+  --active-color: var(--kd-brown-100);
   --active-opacity: 0.7;
   --disabled-opacity: 0.5;
-  --background-color: #f9fafc;
-  --background-color-light: #fafafa;
+  --background-color: var(--kd-paper);
+  --background-color-light: var(--kd-paper-alt);
   --text-link-color: #576b95;
 
   /* Padding */
@@ -106,9 +126,7 @@
   --line-height-base: 1.625rem;
   --line-height-lg: 1.75rem;
 
-  --base-font-family:
-    -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Segoe UI, Arial, Roboto, "PingFang SC", "miui",
-    "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
+  --base-font-family: var(--kd-font-sans);
   --price-integer-font-family: Avenir-Heavy, PingFang SC, Helvetica Neue, Arial, sans-serif;
 
   /* Animation */
@@ -117,13 +135,61 @@
   --animation-timing-function-enter: cubic-bezier(0.32, 0, 0.67, 0);
   --animation-timing-function-leave: cubic-bezier(0.33, 1, 0.68, 1);
 
-  /* Border */
-  --border-color: var(--gray-3);
+  /* Border · KDRHEA 用 hairline 细线 + 极小圆角风 */
+  --border-color: var(--kd-hairline);
   --border-width-base: 1px;
-  --border-radius-sm: 0.125rem;
-  --border-radius-md: 0.375rem;
-  --border-radius-lg: 0.5rem;
+  --border-radius-sm: 0; // 0 圆角（KDRHEA 偏直角风格）
+  --border-radius-md: 0;
+  --border-radius-lg: 2px; // 极小圆角
   --border-radius-max: 999px;
+}
+
+// ============================================================
+// KDRHEA 排版工具类（对应官网 .kd-* 类·小程序版）
+// ============================================================
+.kd-hero {
+  font-family: var(--kd-font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.kd-display {
+  font-family: var(--kd-font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.kd-eyebrow {
+  font-family: var(--kd-font-sans);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--kd-brown-600);
+}
+.kd-meta {
+  font-family: var(--kd-font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--kd-brown-600);
+}
+.kd-lede {
+  font-family: var(--kd-font-display);
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--kd-brown-800);
+}
+.kd-body {
+  font-family: var(--kd-font-sans);
+  font-weight: 300;
+  line-height: 1.85;
+  color: var(--kd-brown-800);
+}
+.kd-rule {
+  border: 0;
+  height: 1px;
+  background: var(--kd-hairline);
 }
 
 // ============================================================
