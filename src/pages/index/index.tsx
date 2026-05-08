@@ -114,13 +114,11 @@ export default function Index() {
       navTitle="KDRHEA"
       className="h-full bg-kd-paper"
       shouldShowNavigationMenu={false}
+      shouldShowBottomActions={false}
     >
       <View className="min-h-screen bg-kd-paper pb-24">
-        {/* === 顶部 nav · 极简一行 === */}
-        <View className="flex items-center justify-between px-5 pb-3 pt-4">
-          <Text style={{ fontSize: "13px", letterSpacing: "0.32em", color: "#3C2218", fontWeight: 500 }}>
-            K  D  R  H  E  A
-          </Text>
+        {/* === 顶部城市选择（精简）=== */}
+        <View className="flex items-center justify-end px-5 pb-1 pt-3">
           <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}>
             徐州 ▾
           </Text>

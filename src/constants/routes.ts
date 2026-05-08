@@ -1,7 +1,10 @@
 // 页面路由名称枚举
 export enum RouteNames {
   HOME = "HOME",
+  MALL = "MALL",
   PROFILE = "PROFILE",
+  SKU_DETAIL = "SKU_DETAIL",
+  CHECKOUT = "CHECKOUT",
   PRIVACY_POLICY = "PRIVACY_POLICY",
   USER_AGREEMENT = "USER_AGREEMENT",
   DEVTOOLS = "DEVTOOLS",
@@ -10,7 +13,10 @@ export enum RouteNames {
 // 页面路径常量
 export const PAGES = {
   [RouteNames.HOME]: "/pages/index/index",
+  [RouteNames.MALL]: "/pages/mall/index",
   [RouteNames.PROFILE]: "/pages/profile/index",
+  [RouteNames.SKU_DETAIL]: "/pages/sku-detail/index",
+  [RouteNames.CHECKOUT]: "/pages/checkout/index",
   [RouteNames.PRIVACY_POLICY]: "/pages/agreements/privacy-policy",
   [RouteNames.USER_AGREEMENT]: "/pages/agreements/user-agreement",
   [RouteNames.DEVTOOLS]: "/pages/devtools/index",

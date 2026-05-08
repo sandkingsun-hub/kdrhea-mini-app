@@ -3,13 +3,15 @@ import { ADAPTED_PAGES, RouteNames } from "~/constants/routes";
 export default defineAppConfig({
   pages: [
     ADAPTED_PAGES[RouteNames.HOME],
+    ADAPTED_PAGES[RouteNames.MALL],
     ADAPTED_PAGES[RouteNames.PROFILE],
+    ADAPTED_PAGES[RouteNames.SKU_DETAIL],
+    ADAPTED_PAGES[RouteNames.CHECKOUT],
     ADAPTED_PAGES[RouteNames.PRIVACY_POLICY],
     ADAPTED_PAGES[RouteNames.USER_AGREEMENT],
     ADAPTED_PAGES[RouteNames.DEVTOOLS],
   ],
   window: {
-    // KDRHEA 自定义导航栏 · 米白底 + 棕色文字
     navigationStyle: "custom",
     backgroundTextStyle: "light",
     backgroundColor: "#FBF7F1",
@@ -17,12 +19,21 @@ export default defineAppConfig({
     navigationBarTitleText: "KDRHEA",
     navigationBarTextStyle: "black",
   },
+  // KDRHEA 自定义 tabBar · 用 custom 实现纯文字 letter-spacing 风格
   tabBar: {
     custom: true,
+    color: "#937761",
+    selectedColor: "#3C2218",
+    backgroundColor: "#FBF7F1",
+    borderStyle: "white",
     list: [
       {
         pagePath: ADAPTED_PAGES[RouteNames.HOME],
         text: "首页",
+      },
+      {
+        pagePath: ADAPTED_PAGES[RouteNames.MALL],
+        text: "商城",
       },
       {
         pagePath: ADAPTED_PAGES[RouteNames.PROFILE],
