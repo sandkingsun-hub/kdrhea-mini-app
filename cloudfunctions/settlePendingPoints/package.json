@@ -1,0 +1,9 @@
+{
+  "name": "settlePendingPoints",
+  "version": "0.1.0",
+  "description": "定时结算 pending 积分（推荐返 7 天到账）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

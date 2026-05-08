@@ -1,0 +1,9 @@
+{
+  "name": "claimInviter",
+  "version": "0.1.0",
+  "description": "新用户首登绑定 inviter 关系",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

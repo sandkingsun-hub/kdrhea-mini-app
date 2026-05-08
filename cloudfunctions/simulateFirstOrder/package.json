@@ -1,0 +1,9 @@
+{
+  "name": "simulateFirstOrder",
+  "version": "0.1.0",
+  "description": "模拟首单 · 触发自消费返 2% 即时 + 推荐返 5% 待结算",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}
