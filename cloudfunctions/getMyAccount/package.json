@@ -1,0 +1,9 @@
+{
+  "name": "getMyAccount",
+  "version": "0.1.0",
+  "description": "查询自己的积分账户 + 最近 N 条流水",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

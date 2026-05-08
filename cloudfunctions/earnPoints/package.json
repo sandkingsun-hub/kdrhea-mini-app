@@ -1,0 +1,9 @@
+{
+  "name": "earnPoints",
+  "version": "0.1.0",
+  "description": "通用积分入账 · 事务封装账户+流水",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

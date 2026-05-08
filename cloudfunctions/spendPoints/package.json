@@ -1,0 +1,9 @@
+{
+  "name": "spendPoints",
+  "version": "0.1.0",
+  "description": "通用积分扣减 · 含 70% 抵扣上限校验",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}
