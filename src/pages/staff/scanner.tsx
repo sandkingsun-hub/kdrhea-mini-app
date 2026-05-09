@@ -234,10 +234,9 @@ export default function StaffScanner() {
               className="mt-2"
               style={{
                 borderBottom: "1px solid #DCC9B6",
-                padding: "10px 0",
-                fontSize: "22px",
+                padding: "8px 0",
+                fontSize: "14px",
                 color: "#3C2218",
-                fontFamily: "var(--kd-font-display)",
               }}
             />
             <Text className="mt-2 block" style={{ fontSize: "10px", color: "#A98D78" }}>
