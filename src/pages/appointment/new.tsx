@@ -12,11 +12,15 @@ interface Sku {
   pointsOnly: boolean;
 }
 
+// 营业时间 10:00 – 19:00
 const SLOTS = [
-  { key: "morning", label: "上午（09:30 – 12:00）" },
-  { key: "afternoon", label: "下午（13:30 – 17:30）" },
-  { key: "evening", label: "晚间（17:30 – 20:00）" },
+  { key: "morning", label: "上午", time: "10:00 – 13:00" },
+  { key: "afternoon", label: "下午", time: "13:00 – 17:00" },
+  { key: "evening", label: "晚间", time: "17:00 – 19:00" },
 ];
+
+// 前台咨询电话
+const RECEPTION_PHONE = "0516-83900001";
 
 function todayPlus(days: number) {
   const d = new Date();
@@ -24,9 +28,14 @@ function todayPlus(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+// 把 "医美注射" → "注射" 显示更轻
+function shortCategory(c: string) {
+  return c.replace(/^医美/, "");
+}
+
 export default function AppointmentNew() {
-  const [skus, setSkus] = useState<Sku[]>([]);
-  const [skuIdx, setSkuIdx] = useState(-1); // -1 = 未选
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryIdx, setCategoryIdx] = useState(-1);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState(todayPlus(1));
@@ -49,33 +58,38 @@ export default function AppointmentNew() {
   };
 
   useLoad(async (options) => {
-    // SKU 列表（医美治疗 service 类型·非纯积分）
-    const r = await callCloud("listSku", { type: "service", pointsOnly: false, limit: 20 });
+    const r = await callCloud("listSku", { type: "service", pointsOnly: false, limit: 50 });
     if (r?.ok) {
-      setSkus(r.items);
-    }
+      const cats = Array.from(new Set((r.items as Sku[]).map(s => s.category))).filter(Boolean);
+      setCategories(cats);
 
-    // 如果路由带 skuId·自动选中
-    if (options?.skuId && r?.ok) {
-      const idx = (r.items as Sku[]).findIndex(s => s._id === options.skuId);
-      if (idx >= 0) {
-        setSkuIdx(idx);
+      if (options?.skuId) {
+        const matched = (r.items as Sku[]).find(s => s._id === options.skuId);
+        if (matched) {
+          const idx = cats.indexOf(matched.category);
+          if (idx >= 0) {
+            setCategoryIdx(idx);
+          }
+        }
       }
     }
 
-    // 拉用户已有的 phone 自动填
     const lg = await callCloud("login");
     if (lg?.user?.phone) {
       setPhone(lg.user.phone);
     }
   });
 
+  const callPhone = () => {
+    Taro.makePhoneCall({ phoneNumber: RECEPTION_PHONE }).catch(() => {});
+  };
+
   const handleSubmit = async () => {
     if (submitting) {
       return;
     }
-    if (skuIdx < 0) {
-      Taro.showToast({ title: "请选择项目", icon: "none" });
+    if (categoryIdx < 0) {
+      Taro.showToast({ title: "请选择项目类别", icon: "none" });
       return;
     }
     if (!name || name.length < 2) {
@@ -87,21 +101,28 @@ export default function AppointmentNew() {
       return;
     }
     setSubmitting(true);
-    const sku = skus[skuIdx];
+    const category = categories[categoryIdx];
     const r = await callCloud("createAppointment", {
       customerName: name,
       customerPhone: phone,
       preferredDate: date,
       preferredSlot: SLOTS[slotIdx].key,
-      skuId: sku._id,
-      skuName: sku.name,
-      skuCategory: sku.category,
+      skuId: null,
+      skuName: "",
+      skuCategory: category,
       customerNotes: notes,
     });
     setSubmitting(false);
     if (r?.ok) {
       Taro.showToast({ title: "申请已提交", icon: "success" });
-      setTimeout(() => Taro.redirectTo({ url: "/pages/appointment/list" }), 1200);
+      setTimeout(() => {
+        const pages = Taro.getCurrentPages();
+        if (pages.length > 1) {
+          Taro.navigateBack();
+        } else {
+          Taro.redirectTo({ url: "/pages/appointment/list" });
+        }
+      }, 1000);
     } else {
       const map: Record<string, string> = {
         DUPLICATE_RECENT: "近 24 小时已提交相同申请",
@@ -115,134 +136,251 @@ export default function AppointmentNew() {
   };
 
   return (
-    <PageWrapper navTitle="预约申请" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
-      <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-5">
+    <PageWrapper navTitle="预约申请" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
+      <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-4">
+        {/* 顶部 */}
         <View className="text-center">
           <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#3C2218", fontWeight: 500 }}>
             B  O  O  K
           </Text>
-          <Text className="mt-1 block text-center" style={{ fontSize: "10px", letterSpacing: "0.12em", color: "#937761" }}>
-            提交后咨询师将致电与您确认
+          <Text className="mt-2 block" style={{ fontSize: "11px", letterSpacing: "0.08em", color: "#937761" }}>
+            两种方式皆可 · 我们 1 小时内回复
           </Text>
         </View>
 
-        {/* SKU 选择 */}
-        <FormRow label="项目">
-          <Picker
-            mode="selector"
-            range={skus.map(s => `${s.name}（${s.category}）`)}
-            value={skuIdx < 0 ? 0 : skuIdx}
-            onChange={e => setSkuIdx(Number(e.detail.value))}
-          >
-            <View className="py-2" style={{ borderBottom: "1px solid #DCC9B6" }}>
-              <Text style={{ fontSize: "14px", color: skuIdx < 0 ? "#A98D78" : "#3C2218" }}>
-                {skuIdx < 0 ? "请选择" : skus[skuIdx]?.name}
-              </Text>
-            </View>
-          </Picker>
-        </FormRow>
-
-        {/* 姓名 */}
-        <FormRow label="您的称呼">
-          <Input
-            value={name}
-            onInput={e => setName(e.detail.value)}
-            placeholder="如：李女士"
-            placeholderStyle="color:#C4AD98;font-size:14px"
-            cursorSpacing={120}
-            adjustPosition
+        {/* 电话预约卡 */}
+        <View
+          className="mt-5 flex items-center justify-between"
+          onClick={callPhone}
+          style={{
+            background: "#FAF7F3",
+            border: "1px solid #DCC9B6",
+            padding: "14px 16px",
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: "10px", letterSpacing: "0.2em", color: "#937761" }}>
+              C  A  L  L
+            </Text>
+            <Text
+              className="mt-1 block"
+              style={{
+                fontFamily: "var(--kd-font-display)",
+                fontSize: "17px",
+                color: "#3C2218",
+                letterSpacing: "0.04em",
+              }}
+            >
+              电话预约 ·
+              {" "}
+              {RECEPTION_PHONE}
+            </Text>
+            <Text className="mt-1 block" style={{ fontSize: "10px", color: "#864D39" }}>
+              营业时间 10:00 – 19:00
+            </Text>
+          </View>
+          <View
             style={{
-              borderBottom: "1px solid #DCC9B6",
+              width: "40px",
               height: "40px",
+              background: "#3C2218",
+              color: "#FBF7F1",
+              fontSize: "20px",
+              textAlign: "center",
               lineHeight: "40px",
-              fontSize: "14px",
-              color: "#3C2218",
             }}
-          />
-        </FormRow>
-
-        {/* 手机号 */}
-        <FormRow label="手机号">
-          <Input
-            type="number"
-            value={phone}
-            onInput={e => setPhone(e.detail.value)}
-            placeholder="11 位手机号"
-            placeholderStyle="color:#C4AD98;font-size:14px"
-            cursorSpacing={120}
-            adjustPosition
-            style={{
-              borderBottom: "1px solid #DCC9B6",
-              height: "40px",
-              lineHeight: "40px",
-              fontSize: "14px",
-              color: "#3C2218",
-            }}
-          />
-        </FormRow>
-
-        {/* 日期 */}
-        <FormRow label="期望日期">
-          <Picker
-            mode="date"
-            value={date}
-            start={todayPlus(0)}
-            end={todayPlus(60)}
-            onChange={e => setDate(e.detail.value)}
           >
-            <View className="py-2" style={{ borderBottom: "1px solid #DCC9B6" }}>
-              <Text style={{ fontSize: "14px", color: "#3C2218" }}>{date}</Text>
-            </View>
-          </Picker>
-        </FormRow>
+            ☎
+          </View>
+        </View>
 
-        {/* 时段 */}
-        <FormRow label="期望时段">
-          <Picker
-            mode="selector"
-            range={SLOTS.map(s => s.label)}
-            value={slotIdx}
-            onChange={e => setSlotIdx(Number(e.detail.value))}
-          >
-            <View className="py-2" style={{ borderBottom: "1px solid #DCC9B6" }}>
-              <Text style={{ fontSize: "14px", color: "#3C2218" }}>
-                {SLOTS[slotIdx].label}
-              </Text>
-            </View>
-          </Picker>
-        </FormRow>
+        {/* 分隔 */}
+        <View className="mt-6 flex items-center">
+          <View style={{ flex: 1, height: "1px", background: "#E8DFD4" }} />
+          <Text className="px-3" style={{ fontSize: "10px", letterSpacing: "0.24em", color: "#A98D78" }}>
+            O  R
+          </Text>
+          <View style={{ flex: 1, height: "1px", background: "#E8DFD4" }} />
+        </View>
 
-        {/* 留言 */}
-        <FormRow label="留言（可选）">
-          <Textarea
-            value={notes}
-            onInput={e => setNotes(e.detail.value)}
-            placeholder="如：有疑虑想先咨询 / 希望某位医生..."
-            placeholderStyle="color:#C4AD98;font-size:13px"
-            cursorSpacing={120}
-            adjustPosition
-            maxlength={200}
-            style={{
-              border: "1px solid #DCC9B6",
-              padding: "10px",
-              fontSize: "13px",
-              color: "#3C2218",
-              minHeight: "80px",
-              lineHeight: "1.5",
-            }}
-          />
-        </FormRow>
+        {/* 表单卡 */}
+        <View
+          className="mt-5"
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "18px 16px" }}
+        >
+          {/* 项目类别 chip */}
+          <SectionLabel text="项目类别" />
+          <View className="mt-2 flex flex-wrap">
+            {categories.length === 0 && (
+              <Text style={{ fontSize: "12px", color: "#A98D78" }}>载入中…</Text>
+            )}
+            {categories.map((c, i) => {
+              const active = i === categoryIdx;
+              return (
+                <View
+                  key={c}
+                  onClick={() => setCategoryIdx(i)}
+                  className="mb-2 mr-2 px-4"
+                  style={{
+                    background: active ? "#3C2218" : "#FBF7F1",
+                    color: active ? "#FBF7F1" : "#5E3425",
+                    border: active ? "1px solid #3C2218" : "1px solid #DCC9B6",
+                    fontSize: "13px",
+                    letterSpacing: "0.04em",
+                    height: "34px",
+                    lineHeight: "32px",
+                  }}
+                >
+                  {shortCategory(c)}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* 称呼 */}
+          <View className="mt-5">
+            <SectionLabel text="您的称呼" />
+            <Input
+              value={name}
+              onInput={e => setName(e.detail.value)}
+              placeholder="如：李女士"
+              placeholderStyle="color:#C4AD98;font-size:14px"
+              cursorSpacing={120}
+              adjustPosition
+              style={{
+                marginTop: "8px",
+                background: "#FBF7F1",
+                border: "1px solid #DCC9B6",
+                paddingLeft: "12px",
+                paddingRight: "12px",
+                height: "44px",
+                lineHeight: "44px",
+                fontSize: "14px",
+                color: "#3C2218",
+              }}
+            />
+          </View>
+
+          {/* 手机号 */}
+          <View className="mt-4">
+            <SectionLabel text="手机号" />
+            <Input
+              type="number"
+              value={phone}
+              onInput={e => setPhone(e.detail.value)}
+              placeholder="11 位手机号"
+              placeholderStyle="color:#C4AD98;font-size:14px"
+              cursorSpacing={120}
+              adjustPosition
+              style={{
+                marginTop: "8px",
+                background: "#FBF7F1",
+                border: "1px solid #DCC9B6",
+                paddingLeft: "12px",
+                paddingRight: "12px",
+                height: "44px",
+                lineHeight: "44px",
+                fontSize: "14px",
+                color: "#3C2218",
+              }}
+            />
+          </View>
+
+          {/* 日期 */}
+          <View className="mt-4">
+            <SectionLabel text="期望日期" />
+            <Picker
+              mode="date"
+              value={date}
+              start={todayPlus(0)}
+              end={todayPlus(60)}
+              onChange={e => setDate(e.detail.value)}
+            >
+              <View
+                style={{
+                  marginTop: "8px",
+                  background: "#FBF7F1",
+                  border: "1px solid #DCC9B6",
+                  paddingLeft: "12px",
+                  paddingRight: "12px",
+                  height: "44px",
+                  lineHeight: "44px",
+                  fontSize: "14px",
+                  color: "#3C2218",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: "14px", color: "#3C2218" }}>{date}</Text>
+                <Text style={{ fontSize: "11px", color: "#937761" }}>选择 ▾</Text>
+              </View>
+            </Picker>
+          </View>
+
+          {/* 时段 chip */}
+          <View className="mt-4">
+            <SectionLabel text="期望时段" />
+            <View className="mt-2 flex">
+              {SLOTS.map((s, i) => {
+                const active = i === slotIdx;
+                return (
+                  <View
+                    key={s.key}
+                    onClick={() => setSlotIdx(i)}
+                    className="mr-2"
+                    style={{
+                      flex: 1,
+                      background: active ? "#3C2218" : "#FBF7F1",
+                      color: active ? "#FBF7F1" : "#5E3425",
+                      border: active ? "1px solid #3C2218" : "1px solid #DCC9B6",
+                      padding: "10px 0",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Text className="block" style={{ fontSize: "13px", color: active ? "#FBF7F1" : "#3C2218" }}>
+                      {s.label}
+                    </Text>
+                    <Text className="mt-1 block" style={{ fontSize: "10px", color: active ? "#DCC9B6" : "#937761" }}>
+                      {s.time}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* 留言 */}
+          <View className="mt-4">
+            <SectionLabel text="留言（可选）" />
+            <Textarea
+              value={notes}
+              onInput={e => setNotes(e.detail.value)}
+              placeholder="如：想了解某项具体项目 / 希望某位医生 / 有其他疑虑..."
+              placeholderStyle="color:#C4AD98;font-size:13px"
+              cursorSpacing={120}
+              adjustPosition
+              maxlength={200}
+              style={{
+                marginTop: "8px",
+                background: "#FBF7F1",
+                border: "1px solid #DCC9B6",
+                padding: "10px 12px",
+                fontSize: "13px",
+                color: "#3C2218",
+                minHeight: "80px",
+                lineHeight: "1.6",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            />
+          </View>
+        </View>
 
         {/* 流程提示 */}
-        <View className="mt-6 p-3" style={{ background: "#F5EDE3" }}>
-          <Text style={{ fontSize: "11px", color: "#5E3425", lineHeight: "1.7" }}>
-            提交后流程：
-            {"\n"}
-            1.  咨询师 1 小时内致电您 · 确认时间和具体方案
-            {"\n"}
-            2.  确认后状态会自动同步到这里
-            {"\n"}
-            3.  您可在「我的预约」查看实时状态
+        <View className="mt-4 px-1">
+          <Text style={{ fontSize: "10px", color: "#937761", lineHeight: "1.7" }}>
+            提交后 · 咨询师 1 小时内致电您确认时间和具体方案 · 状态会同步到「我的预约」
           </Text>
         </View>
       </View>
@@ -270,13 +408,10 @@ export default function AppointmentNew() {
   );
 }
 
-function FormRow({ label, children }: { label: string; children: any }) {
+function SectionLabel({ text }: { text: string }) {
   return (
-    <View className="mt-5">
-      <Text className="block" style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
-        {label}
-      </Text>
-      <View className="mt-1">{children}</View>
-    </View>
+    <Text className="block" style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
+      {text}
+    </Text>
   );
 }

@@ -113,7 +113,7 @@ export default function Index() {
     <PageWrapper
       navTitle="KDRHEA"
       className="h-full bg-kd-paper"
-      shouldShowNavigationMenu={false}
+
       shouldShowBottomActions={false}
     >
       <View className="min-h-screen bg-kd-paper pb-24">

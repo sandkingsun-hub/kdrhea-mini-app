@@ -30,9 +30,9 @@ const STATUS_LABEL: Record<string, { text: string; color: string; bg: string }> 
 };
 
 const SLOT_LABEL: Record<string, string> = {
-  morning: "上午",
-  afternoon: "下午",
-  evening: "晚间",
+  morning: "上午 10–13",
+  afternoon: "下午 13–17",
+  evening: "晚间 17–19",
 };
 
 export default function AppointmentList() {
@@ -63,7 +63,7 @@ export default function AppointmentList() {
   useDidShow(load);
 
   return (
-    <PageWrapper navTitle="我的预约" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+    <PageWrapper navTitle="我的预约" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper px-5 pb-12 pt-5">
         <View className="text-center">
           <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#3C2218", fontWeight: 500 }}>

@@ -30,14 +30,14 @@ const STATUS_FILTERS = [
 ];
 
 const SLOT_LABEL: Record<string, string> = {
-  morning: "上午",
-  afternoon: "下午",
-  evening: "晚间",
+  morning: "上午 10–13",
+  afternoon: "下午 13–17",
+  evening: "晚间 17–19",
 };
 const SLOT_OPTIONS = [
-  { key: "morning", label: "上午" },
-  { key: "afternoon", label: "下午" },
-  { key: "evening", label: "晚间" },
+  { key: "morning", label: "上午 10–13" },
+  { key: "afternoon", label: "下午 13–17" },
+  { key: "evening", label: "晚间 17–19" },
 ];
 
 export default function StaffAppointments() {
@@ -132,7 +132,7 @@ export default function StaffAppointments() {
 
   if (authorized === null) {
     return (
-      <PageWrapper navTitle="预约管理" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+      <PageWrapper navTitle="预约管理" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
         <View className="h-screen flex-center">
           <Text style={{ fontSize: "12px", color: "#937761" }}>校验中…</Text>
         </View>
@@ -142,7 +142,7 @@ export default function StaffAppointments() {
 
   if (!authorized) {
     return (
-      <PageWrapper navTitle="预约管理" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+      <PageWrapper navTitle="预约管理" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
         <View className="flex flex-col items-center px-6 pt-20">
           <Text style={{ fontSize: "13px", color: "#3C2218" }}>权限不足</Text>
           <Text className="mt-2 block" style={{ fontSize: "11px", color: "#937761" }}>该页仅限员工/管理员访问</Text>
@@ -152,7 +152,7 @@ export default function StaffAppointments() {
   }
 
   return (
-    <PageWrapper navTitle="预约管理" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+    <PageWrapper navTitle="预约管理" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper px-5 pb-12 pt-5">
         {/* 顶部 */}
         <View className="text-center">

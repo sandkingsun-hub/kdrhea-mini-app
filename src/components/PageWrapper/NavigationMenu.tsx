@@ -27,8 +27,11 @@ function MenuButton({ menuButton, homeUrl }: NavigationMenuProps) {
       let currentUrl = currentPage?.route || currentPage?.__route__;
 
       // 检查页面是导航条上的路由时，不显示返回和主页按钮
+      // 4 个 tab 页都不需要返回键（tabBar 切换不入栈）
       const noMenuPages = [
         ADAPTED_PAGES[RouteNames.HOME],
+        ADAPTED_PAGES[RouteNames.CARE],
+        ADAPTED_PAGES[RouteNames.GIFTS],
         ADAPTED_PAGES[RouteNames.PROFILE],
       ];
 

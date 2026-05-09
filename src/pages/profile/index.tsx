@@ -137,7 +137,7 @@ export default function Profile() {
   };
 
   return (
-    <PageWrapper navTitle="我的" className="h-full bg-kd-paper" shouldShowNavigationMenu={false} shouldShowBottomActions={false}>
+    <PageWrapper navTitle="我的" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper pb-24">
         {/* 顶部 ME 标签 */}
         <View className="px-6 pb-2 pt-6">

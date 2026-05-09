@@ -79,7 +79,7 @@ export default function QrCode() {
   });
 
   return (
-    <PageWrapper navTitle="我的二维码" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+    <PageWrapper navTitle="我的二维码" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen flex flex-col items-center bg-kd-paper px-6 pt-6">
         <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#937761" }}>
           M  Y    Q  R    C  O  D  E

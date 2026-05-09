@@ -86,7 +86,7 @@ export default function Care() {
   };
 
   return (
-    <PageWrapper navTitle="诊疗" className="h-full bg-kd-paper" shouldShowNavigationMenu={false} shouldShowBottomActions={false}>
+    <PageWrapper navTitle="诊疗" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper pb-24">
         {/* 顶部标题 */}
         <View className="px-5 pb-2 pt-4 text-center">

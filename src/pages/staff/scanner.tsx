@@ -195,7 +195,7 @@ export default function StaffScanner() {
 
   if (authorized === null) {
     return (
-      <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+      <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
         <View className="h-screen flex-center">
           <Text style={{ fontSize: "12px", color: "#937761" }}>校验中…</Text>
         </View>
@@ -205,7 +205,7 @@ export default function StaffScanner() {
 
   if (!authorized) {
     return (
-      <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+      <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
         <View className="flex flex-col items-center px-6 pt-20">
           <Text style={{ fontSize: "13px", color: "#3C2218" }}>权限不足</Text>
           <Text className="mt-2 block" style={{ fontSize: "11px", color: "#937761" }}>
@@ -219,7 +219,7 @@ export default function StaffScanner() {
   const action = ACTIONS[activeAction];
 
   return (
-    <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
+    <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-5">
         {/* 顶部 · 标题 + 副标题 */}
         <View className="pb-4 text-center">
