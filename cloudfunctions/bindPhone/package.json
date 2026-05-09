@@ -1,0 +1,7 @@
+{
+  "name": "bindPhone",
+  "version": "0.1.0",
+  "description": "微信原生授权手机号绑定·防恶意",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

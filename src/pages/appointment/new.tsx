@@ -1,22 +1,20 @@
 // 预约申请 · 客户提交
-import { Input, Picker, Text, Textarea, View } from "@tarojs/components";
+import { Button, Input, Picker, Text, Textarea, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
-interface Sku {
-  _id: string;
-  name: string;
-  category: string;
-  type: string;
-  pointsOnly: boolean;
-}
-
 // 营业时间 10:00 – 19:00
 const SLOTS = [
-  { key: "morning", label: "上午", time: "10:00 – 13:00" },
-  { key: "afternoon", label: "下午", time: "13:00 – 17:00" },
-  { key: "evening", label: "晚间", time: "17:00 – 19:00" },
+  { key: "morning", label: "上午", time: "10–13" },
+  { key: "afternoon", label: "下午", time: "13–17" },
+  { key: "evening", label: "晚间", time: "17–19" },
+];
+
+// 项目大类 · 2 选项
+const CATEGORIES = [
+  { key: "medical", label: "医疗美容", desc: "注射 · 抗衰 · 光电" },
+  { key: "lifestyle", label: "生活美容", desc: "皮肤护理 · 身体管理" },
 ];
 
 // 前台咨询电话
@@ -28,16 +26,31 @@ function todayPlus(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-// 把 "医美注射" → "注射" 显示更轻
-function shortCategory(c: string) {
-  return c.replace(/^医美/, "");
+function maskPhone(p: string) {
+  if (!p || p.length < 7) {
+    return p;
+  }
+  return `${p.slice(0, 3)} **** ${p.slice(-4)}`;
 }
 
+const inputStyle = {
+  background: "#FBF7F1",
+  border: "1px solid #DCC9B6",
+  paddingLeft: "12px",
+  paddingRight: "12px",
+  height: "44px",
+  lineHeight: "44px",
+  fontSize: "14px",
+  color: "#3C2218",
+  marginTop: "8px",
+} as const;
+
 export default function AppointmentNew() {
-  const [categories, setCategories] = useState<string[]>([]);
-  const [categoryIdx, setCategoryIdx] = useState(-1);
+  const [categoryIdx, setCategoryIdx] = useState(0);
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(""); // 微信验证后的真号
+  const [phoneBound, setPhoneBound] = useState(false);
+  const [phoneBinding, setPhoneBinding] = useState(false);
   const [date, setDate] = useState(todayPlus(1));
   const [slotIdx, setSlotIdx] = useState(0);
   const [notes, setNotes] = useState("");
@@ -57,26 +70,12 @@ export default function AppointmentNew() {
     }
   };
 
-  useLoad(async (options) => {
-    const r = await callCloud("listSku", { type: "service", pointsOnly: false, limit: 50 });
-    if (r?.ok) {
-      const cats = Array.from(new Set((r.items as Sku[]).map(s => s.category))).filter(Boolean);
-      setCategories(cats);
-
-      if (options?.skuId) {
-        const matched = (r.items as Sku[]).find(s => s._id === options.skuId);
-        if (matched) {
-          const idx = cats.indexOf(matched.category);
-          if (idx >= 0) {
-            setCategoryIdx(idx);
-          }
-        }
-      }
-    }
-
+  useLoad(async () => {
+    // 拉用户已绑定的真实手机号（来自 users.phone · 之前授权过就有）
     const lg = await callCloud("login");
     if (lg?.user?.phone) {
       setPhone(lg.user.phone);
+      setPhoneBound(true);
     }
   });
 
@@ -84,24 +83,43 @@ export default function AppointmentNew() {
     Taro.makePhoneCall({ phoneNumber: RECEPTION_PHONE }).catch(() => {});
   };
 
+  // 微信原生授权手机号
+  const handleGetPhoneNumber = async (e: any) => {
+    if (phoneBinding) {
+      return;
+    }
+    const code = e?.detail?.code;
+    if (!code) {
+      // 用户拒绝授权
+      Taro.showToast({ title: "需授权才能预约", icon: "none" });
+      return;
+    }
+    setPhoneBinding(true);
+    const r = await callCloud("bindPhone", { phoneCode: code });
+    setPhoneBinding(false);
+    if (r?.ok && r.phone) {
+      setPhone(r.phone);
+      setPhoneBound(true);
+      Taro.showToast({ title: "已绑定", icon: "success" });
+    } else {
+      Taro.showToast({ title: r?.code || "绑定失败", icon: "none" });
+    }
+  };
+
   const handleSubmit = async () => {
     if (submitting) {
       return;
     }
-    if (categoryIdx < 0) {
-      Taro.showToast({ title: "请选择项目类别", icon: "none" });
-      return;
-    }
     if (!name || name.length < 2) {
-      Taro.showToast({ title: "请填姓名", icon: "none" });
+      Taro.showToast({ title: "请填称呼", icon: "none" });
       return;
     }
-    if (!/^1\d{10}$/.test(phone)) {
-      Taro.showToast({ title: "请填正确手机号", icon: "none" });
+    if (!phoneBound || !phone) {
+      Taro.showToast({ title: "请先授权手机号", icon: "none" });
       return;
     }
     setSubmitting(true);
-    const category = categories[categoryIdx];
+    const cat = CATEGORIES[categoryIdx];
     const r = await callCloud("createAppointment", {
       customerName: name,
       customerPhone: phone,
@@ -109,7 +127,7 @@ export default function AppointmentNew() {
       preferredSlot: SLOTS[slotIdx].key,
       skuId: null,
       skuName: "",
-      skuCategory: category,
+      skuCategory: cat.label,
       customerNotes: notes,
     });
     setSubmitting(false);
@@ -137,67 +155,54 @@ export default function AppointmentNew() {
 
   return (
     <PageWrapper navTitle="预约申请" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
-      <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-4">
+      <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-2">
         {/* 顶部 */}
-        <View className="text-center">
-          <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#3C2218", fontWeight: 500 }}>
+        <View className="text-center" style={{ paddingTop: "12px" }}>
+          <Text style={{ fontSize: "11px", letterSpacing: "0.36em", color: "#3C2218", fontWeight: 500 }}>
             B  O  O  K
           </Text>
           <Text className="mt-2 block" style={{ fontSize: "11px", letterSpacing: "0.08em", color: "#937761" }}>
-            两种方式皆可 · 我们 1 小时内回复
+            两种方式皆可 · 1 小时内回复
           </Text>
         </View>
 
-        {/* 电话预约卡 */}
+        {/* 电话预约卡 · 单列居中 · 整卡可点 */}
         <View
-          className="mt-5 flex items-center justify-between"
+          className="mt-6"
           onClick={callPhone}
           style={{
             background: "#FAF7F3",
             border: "1px solid #DCC9B6",
-            padding: "14px 16px",
+            padding: "20px 16px",
+            textAlign: "center",
           }}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: "10px", letterSpacing: "0.2em", color: "#937761" }}>
-              C  A  L  L
-            </Text>
-            <Text
-              className="mt-1 block"
-              style={{
-                fontFamily: "var(--kd-font-display)",
-                fontSize: "17px",
-                color: "#3C2218",
-                letterSpacing: "0.04em",
-              }}
-            >
-              电话预约 ·
-              {" "}
-              {RECEPTION_PHONE}
-            </Text>
-            <Text className="mt-1 block" style={{ fontSize: "10px", color: "#864D39" }}>
-              营业时间 10:00 – 19:00
-            </Text>
+          <View className="mx-auto" style={{ width: "44px", height: "44px", border: "1px solid #864D39", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <View className="i-mdi-phone-outline" style={{ fontSize: "22px", color: "#3C2218" }} />
           </View>
-          <View
+          <Text className="mt-3 block" style={{ fontSize: "10px", letterSpacing: "0.32em", color: "#937761" }}>
+            C  A  L  L
+          </Text>
+          <Text
+            className="mt-1 block"
             style={{
-              width: "40px",
-              height: "40px",
-              background: "#3C2218",
-              color: "#FBF7F1",
+              fontFamily: "var(--kd-font-display)",
               fontSize: "20px",
-              textAlign: "center",
-              lineHeight: "40px",
+              color: "#3C2218",
+              letterSpacing: "0.08em",
             }}
           >
-            ☎
-          </View>
+            {RECEPTION_PHONE}
+          </Text>
+          <Text className="mt-2 block" style={{ fontSize: "10px", letterSpacing: "0.04em", color: "#864D39" }}>
+            营业时间 10:00 – 19:00
+          </Text>
         </View>
 
-        {/* 分隔 */}
+        {/* OR 分隔 */}
         <View className="mt-6 flex items-center">
           <View style={{ flex: 1, height: "1px", background: "#E8DFD4" }} />
-          <Text className="px-3" style={{ fontSize: "10px", letterSpacing: "0.24em", color: "#A98D78" }}>
+          <Text className="px-3" style={{ fontSize: "10px", letterSpacing: "0.28em", color: "#A98D78" }}>
             O  R
           </Text>
           <View style={{ flex: 1, height: "1px", background: "#E8DFD4" }} />
@@ -206,32 +211,50 @@ export default function AppointmentNew() {
         {/* 表单卡 */}
         <View
           className="mt-5"
-          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "18px 16px" }}
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "20px 18px" }}
         >
-          {/* 项目类别 chip */}
-          <SectionLabel text="项目类别" />
-          <View className="mt-2 flex flex-wrap">
-            {categories.length === 0 && (
-              <Text style={{ fontSize: "12px", color: "#A98D78" }}>载入中…</Text>
-            )}
-            {categories.map((c, i) => {
+          {/* 项目类型 · 2 tab */}
+          <SectionLabel text="项目类型" />
+          <View
+            className="mt-2 flex"
+            style={{ border: "1px solid #DCC9B6", background: "#FBF7F1" }}
+          >
+            {CATEGORIES.map((c, i) => {
               const active = i === categoryIdx;
               return (
                 <View
-                  key={c}
+                  key={c.key}
                   onClick={() => setCategoryIdx(i)}
-                  className="mb-2 mr-2 px-4"
                   style={{
-                    background: active ? "#3C2218" : "#FBF7F1",
+                    flex: 1,
+                    background: active ? "#3C2218" : "transparent",
                     color: active ? "#FBF7F1" : "#5E3425",
-                    border: active ? "1px solid #3C2218" : "1px solid #DCC9B6",
-                    fontSize: "13px",
-                    letterSpacing: "0.04em",
-                    height: "34px",
-                    lineHeight: "32px",
+                    padding: "12px 0",
+                    textAlign: "center",
+                    transition: "background 0.2s",
                   }}
                 >
-                  {shortCategory(c)}
+                  <Text
+                    className="block"
+                    style={{
+                      fontFamily: "var(--kd-font-display)",
+                      fontSize: "15px",
+                      letterSpacing: "0.08em",
+                      color: active ? "#FBF7F1" : "#3C2218",
+                    }}
+                  >
+                    {c.label}
+                  </Text>
+                  <Text
+                    className="mt-1 block"
+                    style={{
+                      fontSize: "10px",
+                      color: active ? "#DCC9B6" : "#937761",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {c.desc}
+                  </Text>
                 </View>
               );
             })}
@@ -247,47 +270,77 @@ export default function AppointmentNew() {
               placeholderStyle="color:#C4AD98;font-size:14px"
               cursorSpacing={120}
               adjustPosition
-              style={{
-                marginTop: "8px",
-                background: "#FBF7F1",
-                border: "1px solid #DCC9B6",
-                paddingLeft: "12px",
-                paddingRight: "12px",
-                height: "44px",
-                lineHeight: "44px",
-                fontSize: "14px",
-                color: "#3C2218",
-              }}
+              style={inputStyle}
             />
           </View>
 
-          {/* 手机号 */}
-          <View className="mt-4">
+          {/* 手机号 · 微信原生授权 */}
+          <View className="mt-5">
             <SectionLabel text="手机号" />
-            <Input
-              type="number"
-              value={phone}
-              onInput={e => setPhone(e.detail.value)}
-              placeholder="11 位手机号"
-              placeholderStyle="color:#C4AD98;font-size:14px"
-              cursorSpacing={120}
-              adjustPosition
-              style={{
-                marginTop: "8px",
-                background: "#FBF7F1",
-                border: "1px solid #DCC9B6",
-                paddingLeft: "12px",
-                paddingRight: "12px",
-                height: "44px",
-                lineHeight: "44px",
-                fontSize: "14px",
-                color: "#3C2218",
-              }}
-            />
+            {phoneBound ? (
+              <View
+                className="mt-2 flex items-center justify-between"
+                style={{
+                  background: "#FBF7F1",
+                  border: "1px solid #DCC9B6",
+                  paddingLeft: "12px",
+                  paddingRight: "12px",
+                  height: "44px",
+                }}
+              >
+                <View className="flex items-center" style={{ flex: 1 }}>
+                  <View className="i-mdi-shield-check-outline" style={{ fontSize: "16px", color: "#5E3425", marginRight: "8px" }} />
+                  <Text style={{ fontSize: "14px", color: "#3C2218", letterSpacing: "0.04em" }}>{maskPhone(phone)}</Text>
+                </View>
+                <Button
+                  openType="getPhoneNumber"
+                  onGetPhoneNumber={handleGetPhoneNumber}
+                  hoverClass="none"
+                  style={{
+                    background: "transparent",
+                    color: "#864D39",
+                    fontSize: "11px",
+                    letterSpacing: "0.08em",
+                    padding: "0 6px",
+                    height: "26px",
+                    lineHeight: "26px",
+                    border: "1px solid #DCC9B6",
+                    borderRadius: 0,
+                  }}
+                >
+                  更换
+                </Button>
+              </View>
+            ) : (
+              <Button
+                openType="getPhoneNumber"
+                onGetPhoneNumber={handleGetPhoneNumber}
+                hoverClass="none"
+                disabled={phoneBinding}
+                style={{
+                  marginTop: "8px",
+                  background: phoneBinding ? "#A98D78" : "#FBF7F1",
+                  color: phoneBinding ? "#FBF7F1" : "#3C2218",
+                  border: "1px solid #864D39",
+                  fontSize: "13px",
+                  letterSpacing: "0.06em",
+                  height: "44px",
+                  lineHeight: "44px",
+                  borderRadius: 0,
+                  textAlign: "center",
+                  padding: 0,
+                }}
+              >
+                {phoneBinding ? "绑定中…" : "使用微信绑定手机号"}
+              </Button>
+            )}
+            <Text className="mt-1 block" style={{ fontSize: "10px", color: "#937761" }}>
+              微信验证 · 我们不会收到您手填的号
+            </Text>
           </View>
 
-          {/* 日期 */}
-          <View className="mt-4">
+          {/* 期望日期 */}
+          <View className="mt-5">
             <SectionLabel text="期望日期" />
             <Picker
               mode="date"
@@ -298,47 +351,41 @@ export default function AppointmentNew() {
             >
               <View
                 style={{
+                  ...inputStyle,
                   marginTop: "8px",
-                  background: "#FBF7F1",
-                  border: "1px solid #DCC9B6",
-                  paddingLeft: "12px",
-                  paddingRight: "12px",
-                  height: "44px",
-                  lineHeight: "44px",
-                  fontSize: "14px",
-                  color: "#3C2218",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                 }}
               >
                 <Text style={{ fontSize: "14px", color: "#3C2218" }}>{date}</Text>
-                <Text style={{ fontSize: "11px", color: "#937761" }}>选择 ▾</Text>
+                <View className="i-mdi-calendar-blank-outline" style={{ fontSize: "16px", color: "#937761" }} />
               </View>
             </Picker>
           </View>
 
-          {/* 时段 chip */}
-          <View className="mt-4">
+          {/* 期望时段 · chip 横排 · 等宽 */}
+          <View className="mt-5">
             <SectionLabel text="期望时段" />
-            <View className="mt-2 flex">
+            <View
+              className="mt-2 flex"
+              style={{ border: "1px solid #DCC9B6", background: "#FBF7F1" }}
+            >
               {SLOTS.map((s, i) => {
                 const active = i === slotIdx;
                 return (
                   <View
                     key={s.key}
                     onClick={() => setSlotIdx(i)}
-                    className="mr-2"
                     style={{
                       flex: 1,
-                      background: active ? "#3C2218" : "#FBF7F1",
-                      color: active ? "#FBF7F1" : "#5E3425",
-                      border: active ? "1px solid #3C2218" : "1px solid #DCC9B6",
+                      background: active ? "#3C2218" : "transparent",
                       padding: "10px 0",
                       textAlign: "center",
+                      borderLeft: i === 0 ? "none" : "1px solid #DCC9B6",
                     }}
                   >
-                    <Text className="block" style={{ fontSize: "13px", color: active ? "#FBF7F1" : "#3C2218" }}>
+                    <Text className="block" style={{ fontSize: "13px", color: active ? "#FBF7F1" : "#3C2218", letterSpacing: "0.06em" }}>
                       {s.label}
                     </Text>
                     <Text className="mt-1 block" style={{ fontSize: "10px", color: active ? "#DCC9B6" : "#937761" }}>
@@ -351,7 +398,7 @@ export default function AppointmentNew() {
           </View>
 
           {/* 留言 */}
-          <View className="mt-4">
+          <View className="mt-5">
             <SectionLabel text="留言（可选）" />
             <Textarea
               value={notes}
@@ -378,9 +425,9 @@ export default function AppointmentNew() {
         </View>
 
         {/* 流程提示 */}
-        <View className="mt-4 px-1">
+        <View className="mt-4 px-2 text-center">
           <Text style={{ fontSize: "10px", color: "#937761", lineHeight: "1.7" }}>
-            提交后 · 咨询师 1 小时内致电您确认时间和具体方案 · 状态会同步到「我的预约」
+            提交后 · 咨询师 1 小时内致电您确认时间和具体方案
           </Text>
         </View>
       </View>
@@ -396,7 +443,7 @@ export default function AppointmentNew() {
           background: submitting ? "#A98D78" : "#3C2218",
           color: "#FBF7F1",
           fontSize: "14px",
-          letterSpacing: "0.24em",
+          letterSpacing: "0.28em",
           textAlign: "center",
           padding: "16px 0",
           zIndex: 50,
@@ -410,7 +457,7 @@ export default function AppointmentNew() {
 
 function SectionLabel({ text }: { text: string }) {
   return (
-    <Text className="block" style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
+    <Text className="block" style={{ fontSize: "11px", letterSpacing: "0.18em", color: "#864D39", fontWeight: 500 }}>
       {text}
     </Text>
   );
