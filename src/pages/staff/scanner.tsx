@@ -1,9 +1,83 @@
 // 员工扫码工具 · 仅 user.role in [staff, admin] 可访问
 // 扫客户码 → 选操作（消费返利 / 积分抵扣 / 到店打卡）→ 提交
+import type { ReactNode } from "react";
 import { Input, Text, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
+
+// === StepCard · 步骤卡片 · 编号 + 标题 + 副标题 + 内容 ===
+function StepCard({
+  number,
+  title,
+  subtitle,
+  done,
+  active,
+  children,
+}: {
+  number: string;
+  title: string;
+  subtitle?: string;
+  done: boolean;
+  active: boolean;
+  children: ReactNode;
+}) {
+  const opacity = !active && !done ? 0.45 : 1;
+  return (
+    <View
+      className="mt-3 p-4"
+      style={{
+        background: active ? "#FAF7F3" : "#FBF7F1",
+        border: `1px solid ${active ? "#DCC9B6" : "#E8DFD4"}`,
+        opacity,
+      }}
+    >
+      <View className="flex items-baseline">
+        <Text
+          style={{
+            fontFamily: "var(--kd-font-display)",
+            fontSize: "18px",
+            color: done ? "#864D39" : "#3C2218",
+            fontWeight: 400,
+            letterSpacing: "0.04em",
+          }}
+        >
+          {number}
+        </Text>
+        <Text
+          className="ml-2"
+          style={{
+            fontSize: "13px",
+            color: "#3C2218",
+            fontWeight: 500,
+            letterSpacing: "0.04em",
+          }}
+        >
+          {title}
+        </Text>
+        {done && (
+          <Text className="ml-auto" style={{ fontSize: "12px", color: "#864D39" }}>
+            ✓
+          </Text>
+        )}
+      </View>
+      {subtitle && (
+        <Text
+          className="mt-1 block"
+          style={{
+            fontSize: "11px",
+            color: "#937761",
+            lineHeight: "1.6",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {subtitle}
+        </Text>
+      )}
+      <View className="mt-3">{children}</View>
+    </View>
+  );
+}
 
 const ACTIONS = [
   {
@@ -146,49 +220,63 @@ export default function StaffScanner() {
 
   return (
     <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
-      <View className="min-h-screen bg-kd-paper px-6 pb-32 pt-6">
-        {/* 顶部 */}
-        <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#937761" }}>
-          S  T  A  F  F    T  O  O  L
-        </Text>
-
-        {/* 扫码 + openid 显示 */}
-        <View className="mt-6">
-          <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
-            STEP 1  ·  扫客户码
+      <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-5">
+        {/* 顶部 · 标题 + 副标题 */}
+        <View className="pb-4 text-center">
+          <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#3C2218", fontWeight: 500 }}>
+            S  T  A  F  F    T  O  O  L
           </Text>
-          <View className="mt-2 flex items-center justify-between">
+          <Text className="mt-1 block text-center" style={{ fontSize: "10px", letterSpacing: "0.12em", color: "#937761" }}>
+            扫码 · 选操作 · 提交
+          </Text>
+        </View>
+
+        {/* === STEP 01 · 扫码 === */}
+        <StepCard
+          number="01"
+          title="扫客户码"
+          subtitle="让客户在小程序展示二维码后扫描"
+          done={!!customerOpenid}
+          active={!customerOpenid}
+        >
+          <View className="flex items-center justify-between">
             <Text
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 color: customerOpenid ? "#3C2218" : "#A98D78",
                 fontFamily: "monospace",
                 flex: 1,
               }}
             >
-              {customerOpenid ? `${customerOpenid.slice(0, 24)}...` : "未扫码"}
+              {customerOpenid ? `${customerOpenid.slice(0, 18)}…` : "未扫码"}
             </Text>
             <View
               onClick={handleScan}
-              className="ml-3 px-4 py-2"
+              className="ml-3 px-4"
               style={{
                 background: "#3C2218",
                 color: "#FBF7F1",
                 fontSize: "12px",
                 letterSpacing: "0.16em",
+                height: "32px",
+                lineHeight: "32px",
+                textAlign: "center",
               }}
             >
-              扫码
+              {customerOpenid ? "重扫" : "扫码"}
             </View>
           </View>
-        </View>
+        </StepCard>
 
-        {/* 操作选择 · 紧凑横排 chip */}
-        <View className="mt-6">
-          <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
-            STEP 2  ·  选择操作
-          </Text>
-          <View className="mt-2 flex flex-wrap">
+        {/* === STEP 02 · 选操作 === */}
+        <StepCard
+          number="02"
+          title="选择操作"
+          subtitle={action.desc}
+          done={!!customerOpenid}
+          active={!!customerOpenid}
+        >
+          <View className="flex flex-wrap">
             {ACTIONS.map((a, i) => (
               <View
                 key={a.code}
@@ -196,32 +284,37 @@ export default function StaffScanner() {
                   setActiveAction(i);
                   setInputValue("");
                 }}
-                className="mb-2 mr-2 px-3 py-2"
+                className="mb-2 mr-2 px-3"
                 style={{
                   background: activeAction === i ? "#3C2218" : "transparent",
                   color: activeAction === i ? "#FBF7F1" : "#5E3425",
                   border: activeAction === i ? "1px solid #3C2218" : "1px solid #DCC9B6",
                   fontSize: "12px",
                   letterSpacing: "0.06em",
+                  height: "30px",
+                  lineHeight: "28px",
+                  textAlign: "center",
                 }}
               >
                 {a.label}
               </View>
             ))}
           </View>
-          <Text className="mt-2 block" style={{ fontSize: "11px", color: "#A98D78", lineHeight: "1.5" }}>
-            {action.desc}
-          </Text>
-        </View>
+        </StepCard>
 
-        {/* 输入金额/积分 · 加 cursorSpacing 防键盘挡 */}
+        {/* === STEP 03 · 输入（仅 amount/points 显示） === */}
         {action.inputType !== "fixed" && (
-          <View className="mt-6">
-            <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
-              STEP 3  ·
-              {" "}
-              {action.placeholder}
-            </Text>
+          <StepCard
+            number="03"
+            title={action.inputType === "amount" ? "输入金额" : "输入积分数"}
+            subtitle={
+              action.inputType === "amount"
+                ? "客户支付的现金（元）· 系统自动按 2% 折算返利"
+                : "用客户积分顶现金 · 1 积分 = ¥0.01"
+            }
+            done={inputValue.length > 0}
+            active={!!customerOpenid}
+          >
             <Input
               type="digit"
               value={inputValue}
@@ -231,24 +324,30 @@ export default function StaffScanner() {
               confirmType="done"
               cursorSpacing={180}
               adjustPosition
-              className="mt-2"
               style={{
                 borderBottom: "1px solid #DCC9B6",
-                padding: "8px 0",
-                fontSize: "14px",
+                height: "44px",
+                lineHeight: "44px",
+                paddingLeft: "0",
+                paddingRight: "0",
+                fontSize: "16px",
                 color: "#3C2218",
               }}
+              placeholderStyle="color:#C4AD98;font-size:14px"
             />
             <Text className="mt-2 block" style={{ fontSize: "10px", color: "#A98D78" }}>
-              提示：键盘按"完成"也可直接提交
+              键盘按"完成"键可直接提交
             </Text>
-          </View>
+          </StepCard>
         )}
 
-        {/* 结果 */}
+        {/* 结果反馈 */}
         {lastResult && (
-          <View className="mt-4 p-3" style={{ background: "#F5EDE3" }}>
-            <Text style={{ fontSize: "12px", color: "#3C2218" }}>{lastResult}</Text>
+          <View
+            className="mt-4 p-3"
+            style={{ background: lastResult.startsWith("✅") ? "#F5EDE3" : "#FAF0EF", border: "1px solid #E8DFD4" }}
+          >
+            <Text style={{ fontSize: "12px", color: "#3C2218", lineHeight: "1.6" }}>{lastResult}</Text>
           </View>
         )}
       </View>
