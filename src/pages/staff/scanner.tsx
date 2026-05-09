@@ -146,7 +146,7 @@ export default function StaffScanner() {
 
   return (
     <PageWrapper navTitle="员工工具" className="h-full bg-kd-paper" shouldShowBottomActions={false} shouldShowNavigationMenu={false}>
-      <View className="min-h-screen bg-kd-paper px-6 pb-12 pt-6">
+      <View className="min-h-screen bg-kd-paper px-6 pb-32 pt-6">
         {/* 顶部 */}
         <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#937761" }}>
           S  T  A  F  F    T  O  O  L
@@ -183,44 +183,40 @@ export default function StaffScanner() {
           </View>
         </View>
 
-        {/* 操作选择 */}
-        <View className="mt-8">
+        {/* 操作选择 · 紧凑横排 chip */}
+        <View className="mt-6">
           <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
             STEP 2  ·  选择操作
           </Text>
-          <View className="mt-3">
+          <View className="mt-2 flex flex-wrap">
             {ACTIONS.map((a, i) => (
               <View
                 key={a.code}
-                onClick={() => setActiveAction(i)}
-                className="border-b py-3"
-                style={{ borderColor: "#E8DFD4" }}
+                onClick={() => {
+                  setActiveAction(i);
+                  setInputValue("");
+                }}
+                className="mb-2 mr-2 px-3 py-2"
+                style={{
+                  background: activeAction === i ? "#3C2218" : "transparent",
+                  color: activeAction === i ? "#FBF7F1" : "#5E3425",
+                  border: activeAction === i ? "1px solid #3C2218" : "1px solid #DCC9B6",
+                  fontSize: "12px",
+                  letterSpacing: "0.06em",
+                }}
               >
-                <View className="flex items-baseline justify-between">
-                  <Text
-                    style={{
-                      fontSize: "14px",
-                      color: activeAction === i ? "#3C2218" : "#5E3425",
-                      fontWeight: activeAction === i ? 500 : 300,
-                    }}
-                  >
-                    {a.label}
-                  </Text>
-                  <Text style={{ fontSize: "12px", color: "#937761" }}>
-                    {activeAction === i ? "✓" : ""}
-                  </Text>
-                </View>
-                <Text className="mt-1 block" style={{ fontSize: "11px", color: "#A98D78" }}>
-                  {a.desc}
-                </Text>
+                {a.label}
               </View>
             ))}
           </View>
+          <Text className="mt-2 block" style={{ fontSize: "11px", color: "#A98D78", lineHeight: "1.5" }}>
+            {action.desc}
+          </Text>
         </View>
 
-        {/* 输入金额/积分 */}
+        {/* 输入金额/积分 · 加 cursorSpacing 防键盘挡 */}
         {action.inputType !== "fixed" && (
-          <View className="mt-8">
+          <View className="mt-6">
             <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#864D39", fontWeight: 500 }}>
               STEP 3  ·
               {" "}
@@ -230,39 +226,51 @@ export default function StaffScanner() {
               type="digit"
               value={inputValue}
               onInput={e => setInputValue(e.detail.value)}
+              onConfirm={handleSubmit}
               placeholder={action.placeholder}
+              confirmType="done"
+              cursorSpacing={180}
+              adjustPosition
               className="mt-2"
               style={{
                 borderBottom: "1px solid #DCC9B6",
-                padding: "8px 0",
-                fontSize: "20px",
+                padding: "10px 0",
+                fontSize: "22px",
                 color: "#3C2218",
                 fontFamily: "var(--kd-font-display)",
               }}
             />
+            <Text className="mt-2 block" style={{ fontSize: "10px", color: "#A98D78" }}>
+              提示：键盘按"完成"也可直接提交
+            </Text>
           </View>
         )}
-
-        {/* 提交 */}
-        <View
-          onClick={handleSubmit}
-          className="mt-10 py-4 text-center"
-          style={{
-            background: submitting ? "#A98D78" : "#3C2218",
-            color: "#FBF7F1",
-            fontSize: "14px",
-            letterSpacing: "0.24em",
-          }}
-        >
-          {submitting ? "处理中…" : "确认执行"}
-        </View>
 
         {/* 结果 */}
         {lastResult && (
-          <View className="mt-6 p-3" style={{ background: "#F5EDE3" }}>
+          <View className="mt-4 p-3" style={{ background: "#F5EDE3" }}>
             <Text style={{ fontSize: "12px", color: "#3C2218" }}>{lastResult}</Text>
           </View>
         )}
+      </View>
+
+      {/* 提交按钮 · 浮动底部条 · 不被键盘挡 */}
+      <View
+        onClick={handleSubmit}
+        className="py-4 text-center"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: submitting ? "#A98D78" : "#3C2218",
+          color: "#FBF7F1",
+          fontSize: "14px",
+          letterSpacing: "0.24em",
+          zIndex: 50,
+        }}
+      >
+        {submitting ? "处理中…" : "确认执行"}
       </View>
     </PageWrapper>
   );
