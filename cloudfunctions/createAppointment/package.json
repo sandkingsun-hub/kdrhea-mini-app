@@ -1,0 +1,7 @@
+{
+  "name": "createAppointment",
+  "version": "0.1.0",
+  "description": "客户提交预约申请",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

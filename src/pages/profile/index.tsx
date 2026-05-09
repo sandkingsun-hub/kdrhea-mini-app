@@ -331,6 +331,14 @@ export default function Profile() {
           <View
             className="flex items-center justify-between border-b py-4"
             style={{ borderColor: "#E8DFD4" }}
+            onClick={() => Taro.navigateTo({ url: "/pages/appointment/list" })}
+          >
+            <Text style={{ fontSize: "13px", color: "#3C2218" }}>我的预约</Text>
+            <Text style={{ fontSize: "11px", color: "#937761" }}>→</Text>
+          </View>
+          <View
+            className="flex items-center justify-between border-b py-4"
+            style={{ borderColor: "#E8DFD4" }}
             onClick={handleInvite}
           >
             <Text style={{ fontSize: "13px", color: "#3C2218" }}>分享给在意的人</Text>
@@ -355,16 +363,28 @@ export default function Profile() {
 
           {/* 员工入口 · 仅 staff/admin 可见 · 客户完全不显示 */}
           {(user?.role === "staff" || user?.role === "admin") && (
-            <View
-              className="flex items-center justify-between border-b py-4"
-              style={{ borderColor: "#E8DFD4" }}
-              onClick={() => Taro.navigateTo({ url: "/pages/staff/scanner" })}
-            >
-              <Text style={{ fontSize: "13px", color: "#864D39", letterSpacing: "0.08em" }}>
-                STAFF · 员工工具
-              </Text>
-              <Text style={{ fontSize: "11px", color: "#864D39" }}>→</Text>
-            </View>
+            <>
+              <View
+                className="flex items-center justify-between border-b py-4"
+                style={{ borderColor: "#E8DFD4" }}
+                onClick={() => Taro.navigateTo({ url: "/pages/staff/scanner" })}
+              >
+                <Text style={{ fontSize: "13px", color: "#864D39", letterSpacing: "0.08em" }}>
+                  STAFF · 扫码工具
+                </Text>
+                <Text style={{ fontSize: "11px", color: "#864D39" }}>→</Text>
+              </View>
+              <View
+                className="flex items-center justify-between border-b py-4"
+                style={{ borderColor: "#E8DFD4" }}
+                onClick={() => Taro.navigateTo({ url: "/pages/staff/appointments" })}
+              >
+                <Text style={{ fontSize: "13px", color: "#864D39", letterSpacing: "0.08em" }}>
+                  STAFF · 预约管理
+                </Text>
+                <Text style={{ fontSize: "11px", color: "#864D39" }}>→</Text>
+              </View>
+            </>
           )}
         </View>
 

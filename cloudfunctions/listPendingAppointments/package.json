@@ -1,0 +1,7 @@
+{
+  "name": "listPendingAppointments",
+  "version": "0.1.0",
+  "description": "员工查待处理预约",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

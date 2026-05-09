@@ -1,0 +1,7 @@
+{
+  "name": "listMyAppointments",
+  "version": "0.1.0",
+  "description": "客户查自己的预约列表",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

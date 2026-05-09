@@ -34,10 +34,10 @@ function fenToYuan(n: number): string {
 }
 
 const QUICK_ENTRIES = [
-  { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约" },
-  { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友" },
-  { key: "journal", icon: "i-mdi-book-open-variant", label: "美学日记" },
-  { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠" },
+  { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约", route: "/pages/appointment/new" },
+  { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "" },
+  { key: "journal", icon: "i-mdi-book-open-variant", label: "美学日记", route: "" },
+  { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "" },
 ];
 
 export default function Index() {
@@ -180,7 +180,13 @@ export default function Index() {
             <View
               key={e.key}
               className="flex flex-col items-center"
-              onClick={() => Taro.showToast({ title: `${e.label} · 待开发`, icon: "none" })}
+              onClick={() => {
+                if (e.route) {
+                  Taro.navigateTo({ url: e.route });
+                } else {
+                  Taro.showToast({ title: `${e.label} · 待开发`, icon: "none" });
+                }
+              }}
             >
               <View
                 className="flex items-center justify-center"

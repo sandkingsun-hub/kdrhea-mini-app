@@ -1,0 +1,7 @@
+{
+  "name": "updateAppointmentStatus",
+  "version": "0.1.0",
+  "description": "员工改预约状态",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}
