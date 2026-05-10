@@ -1,68 +1,19 @@
 // 员工 · 发券给客户
-// 流程：扫客户 QR → 选模板 / 填信息 → 提交 grantCoupon
+// 流程：扫客户 QR → 选模板（云端拉）/ 自定义 → 提交 grantCoupon
 import { Input, Picker, Text, Textarea, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
 interface Template {
-  key: string;
-  label: string;
-  couponName: string;
-  couponType: "experience" | "discount" | "cash" | "physical_gift" | "custom";
+  _id: string;
+  templateNo: string;
+  name: string;
+  type: "experience" | "discount" | "cash" | "physical_gift" | "custom";
   value: string;
   description: string;
-  validDays: number;
+  defaultValidDays: number;
 }
-
-// 常用模板·门店常发的几款
-const TEMPLATES: Template[] = [
-  {
-    key: "spa-half",
-    label: "半日 SPA 体验",
-    couponName: "VIP 体验日 · 半日 SPA",
-    couponType: "experience",
-    value: "1 次半日护理 + 茶歇",
-    description: "含洁面 · 面膜 · 肩颈按摩 · 下午茶",
-    validDays: 90,
-  },
-  {
-    key: "m22",
-    label: "M22 光子嫩肤",
-    couponName: "M22 光子嫩肤 · 体验",
-    couponType: "experience",
-    value: "1 次单部位",
-    description: "进口 M22 平台 · 全脸或颈部",
-    validDays: 60,
-  },
-  {
-    key: "cash-100",
-    label: "¥100 抵用券",
-    couponName: "¥100 抵用券",
-    couponType: "cash",
-    value: "可抵 100 元",
-    description: "下次到店现金抵扣 100 元 · 不可叠加",
-    validDays: 90,
-  },
-  {
-    key: "cash-500",
-    label: "¥500 抵用券",
-    couponName: "¥500 抵用券",
-    couponType: "cash",
-    value: "可抵 500 元",
-    description: "下次到店现金抵扣 500 元 · 限单笔满 2000 元使用",
-    validDays: 180,
-  },
-  {
-    key: "custom",
-    label: "自定义",
-    couponName: "",
-    couponType: "custom",
-    value: "",
-    description: "",
-    validDays: 180,
-  },
-];
 
 const TYPE_OPTIONS = [
   { key: "experience", label: "体验券" },
@@ -71,6 +22,17 @@ const TYPE_OPTIONS = [
   { key: "physical_gift", label: "实物礼品" },
   { key: "custom", label: "礼券" },
 ];
+
+// 自定义虚拟模板·让员工灵活发非标准券
+const CUSTOM_TEMPLATE: Template = {
+  _id: "__custom__",
+  templateNo: "—",
+  name: "",
+  type: "custom",
+  value: "",
+  description: "",
+  defaultValidDays: 180,
+};
 
 const inputStyle = {
   background: "#FBF7F1",
@@ -88,12 +50,13 @@ const inputStyle = {
 export default function StaffGrantCoupon() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [customerOpenid, setCustomerOpenid] = useState("");
-  const [templateIdx, setTemplateIdx] = useState(0);
-  const [name, setName] = useState(TEMPLATES[0].couponName);
+  const [templates, setTemplates] = useState<Template[]>([CUSTOM_TEMPLATE]);
+  const [templateIdx, setTemplateIdx] = useState(-1);
+  const [name, setName] = useState("");
   const [typeIdx, setTypeIdx] = useState(0);
-  const [value, setValue] = useState(TEMPLATES[0].value);
-  const [description, setDescription] = useState(TEMPLATES[0].description);
-  const [validDays, setValidDays] = useState(String(TEMPLATES[0].validDays));
+  const [value, setValue] = useState("");
+  const [description, setDescription] = useState("");
+  const [validDays, setValidDays] = useState("180");
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState("");
 
@@ -114,14 +77,23 @@ export default function StaffGrantCoupon() {
   useLoad(async () => {
     const lg = await callCloud("login");
     const role = lg?.user?.role || "customer";
-    setAuthorized(role === "staff" || role === "admin");
+    if (role !== "staff" && role !== "admin") {
+      setAuthorized(false);
+      return;
+    }
+    setAuthorized(true);
+
+    // 拉云端模板（管理员在 admin.kdrhea.com 配置的）
+    const r = await callCloud("listCouponTemplates");
+    if (r?.ok && r.items) {
+      setTemplates([...r.items, CUSTOM_TEMPLATE]);
+    }
   });
 
   const handleScan = async () => {
     try {
       const r = await Taro.scanCode({ scanType: ["qrCode"] });
       const result = r.result || "";
-      // 排除券码（避免员工误把券 QR 当客户 QR）
       if (result.startsWith("{") && result.includes("\"t\":\"coupon\"")) {
         Taro.showToast({ title: "这是券码·不是客户码", icon: "none" });
         return;
@@ -135,20 +107,12 @@ export default function StaffGrantCoupon() {
 
   const pickTemplate = (i: number) => {
     setTemplateIdx(i);
-    const t = TEMPLATES[i];
-    if (t.key === "custom") {
-      // 自定义模板·清空让员工自己填
-      setName("");
-      setValue("");
-      setDescription("");
-      setTypeIdx(TYPE_OPTIONS.findIndex(o => o.key === "custom"));
-    } else {
-      setName(t.couponName);
-      setValue(t.value);
-      setDescription(t.description);
-      setTypeIdx(TYPE_OPTIONS.findIndex(o => o.key === t.couponType));
-    }
-    setValidDays(String(t.validDays));
+    const t = templates[i];
+    setName(t.name);
+    setValue(t.value);
+    setDescription(t.description);
+    setTypeIdx(TYPE_OPTIONS.findIndex(o => o.key === t.type));
+    setValidDays(String(t.defaultValidDays));
   };
 
   const handleSubmit = async () => {
@@ -157,6 +121,10 @@ export default function StaffGrantCoupon() {
     }
     if (!customerOpenid) {
       Taro.showToast({ title: "请先扫客户码", icon: "none" });
+      return;
+    }
+    if (templateIdx < 0) {
+      Taro.showToast({ title: "请选模板", icon: "none" });
       return;
     }
     if (!name || name.length < 2) {
@@ -184,8 +152,8 @@ export default function StaffGrantCoupon() {
     if (r?.ok) {
       setLastResult(`✅ 已发送 · ${r.couponNo}`);
       Taro.showToast({ title: "已发送", icon: "success" });
-      // 清客户·准备下一发
       setCustomerOpenid("");
+      setTemplateIdx(-1);
     } else {
       const map: Record<string, string> = {
         PERMISSION_DENIED: "权限不足",
@@ -224,7 +192,6 @@ export default function StaffGrantCoupon() {
   return (
     <PageWrapper navTitle="发券" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper px-5 pb-32 pt-3">
-        {/* 顶部 */}
         <View className="text-center" style={{ paddingTop: "8px" }}>
           <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#3C2218", fontWeight: 500 }}>
             G  R  A  N  T    C  O  U  P  O  N
@@ -237,14 +204,7 @@ export default function StaffGrantCoupon() {
         {/* === STEP 01 · 扫客户 === */}
         <SectionCard number="01" title="选客户" done={!!customerOpenid}>
           <View className="flex items-center justify-between">
-            <Text
-              style={{
-                fontSize: "12px",
-                color: customerOpenid ? "#3C2218" : "#A98D78",
-                fontFamily: "monospace",
-                flex: 1,
-              }}
-            >
+            <Text style={{ fontSize: "12px", color: customerOpenid ? "#3C2218" : "#A98D78", fontFamily: "monospace", flex: 1 }}>
               {customerOpenid ? `${customerOpenid.slice(0, 18)}…` : "未扫码"}
             </Text>
             <View
@@ -266,14 +226,24 @@ export default function StaffGrantCoupon() {
           </View>
         </SectionCard>
 
-        {/* === STEP 02 · 模板 === */}
-        <SectionCard number="02" title="券模板" done={templateIdx >= 0 && !!name}>
+        {/* === STEP 02 · 选模板 === */}
+        <SectionCard
+          number="02"
+          title="选券模板"
+          done={templateIdx >= 0 && !!name}
+        >
           <View className="flex flex-wrap" style={{ gap: "8px" }}>
-            {TEMPLATES.map((t, i) => {
+            {templates.length === 1 && (
+              <Text style={{ fontSize: "11px", color: "#A98D78" }}>
+                还没配置模板·让管理员去后台 admin.kdrhea.com 添加
+              </Text>
+            )}
+            {templates.map((t, i) => {
               const active = i === templateIdx;
+              const isCustom = t._id === "__custom__";
               return (
                 <View
-                  key={t.key}
+                  key={t._id}
                   onClick={() => pickTemplate(i)}
                   style={{
                     background: active ? "#3C2218" : "#FBF7F1",
@@ -283,9 +253,10 @@ export default function StaffGrantCoupon() {
                     letterSpacing: "0.04em",
                     padding: "6px 12px",
                     borderRadius: "999px",
+                    fontStyle: isCustom ? "italic" : "normal",
                   }}
                 >
-                  {t.label}
+                  {isCustom ? "自定义" : t.name}
                 </View>
               );
             })}
@@ -293,83 +264,74 @@ export default function StaffGrantCoupon() {
         </SectionCard>
 
         {/* === STEP 03 · 编辑 === */}
-        <SectionCard number="03" title="券内容" done={!!name}>
-          <FormRow label="券名称">
-            <Input
-              value={name}
-              onInput={e => setName(e.detail.value)}
-              placeholder="例：M22 光子嫩肤 · 体验"
-              placeholderStyle="color:#C4AD98;font-size:13px"
-              maxlength={30}
-              cursorSpacing={120}
-              adjustPosition
-              style={inputStyle}
-            />
-          </FormRow>
+        {templateIdx >= 0 && (
+          <SectionCard number="03" title="券内容" done={!!name}>
+            <FormRow label="券名称">
+              <Input
+                value={name}
+                onInput={e => setName(e.detail.value)}
+                placeholder="例：M22 光子嫩肤 · 体验"
+                placeholderStyle="color:#C4AD98;font-size:13px"
+                maxlength={30}
+                cursorSpacing={120}
+                adjustPosition
+                style={inputStyle}
+              />
+            </FormRow>
 
-          <FormRow label="类型">
-            <Picker
-              mode="selector"
-              range={TYPE_OPTIONS.map(o => o.label)}
-              value={typeIdx}
-              onChange={e => setTypeIdx(Number(e.detail.value))}
-            >
-              <View style={{ ...inputStyle, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontSize: "13px", color: "#3C2218" }}>{TYPE_OPTIONS[typeIdx].label}</Text>
-                <Text style={{ fontSize: "11px", color: "#937761" }}>选择 ▾</Text>
-              </View>
-            </Picker>
-          </FormRow>
+            <FormRow label="类型">
+              <Picker
+                mode="selector"
+                range={TYPE_OPTIONS.map(o => o.label)}
+                value={typeIdx}
+                onChange={e => setTypeIdx(Number(e.detail.value))}
+              >
+                <View style={{ ...inputStyle, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Text style={{ fontSize: "13px", color: "#3C2218" }}>{TYPE_OPTIONS[typeIdx].label}</Text>
+                  <Text style={{ fontSize: "11px", color: "#937761" }}>选择 ▾</Text>
+                </View>
+              </Picker>
+            </FormRow>
 
-          <FormRow label="面值/规格（显示在券面）">
-            <Input
-              value={value}
-              onInput={e => setValue(e.detail.value)}
-              placeholder="例：可抵 ¥100 / 1 次单部位"
-              placeholderStyle="color:#C4AD98;font-size:13px"
-              maxlength={40}
-              cursorSpacing={120}
-              adjustPosition
-              style={inputStyle}
-            />
-          </FormRow>
+            <FormRow label="面值/规格">
+              <Input
+                value={value}
+                onInput={e => setValue(e.detail.value)}
+                placeholder="例：可抵 ¥100 / 1 次单部位"
+                placeholderStyle="color:#C4AD98;font-size:13px"
+                maxlength={40}
+                cursorSpacing={120}
+                adjustPosition
+                style={inputStyle}
+              />
+            </FormRow>
 
-          <FormRow label="说明（可选）">
-            <Textarea
-              value={description}
-              onInput={e => setDescription(e.detail.value)}
-              placeholder="使用场景 · 限制条件 · 等"
-              placeholderStyle="color:#C4AD98;font-size:13px"
-              maxlength={120}
-              cursorSpacing={150}
-              adjustPosition
-              style={{
-                ...inputStyle,
-                height: "70px",
-                lineHeight: "1.6",
-                paddingTop: "10px",
-                paddingBottom: "10px",
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            />
-          </FormRow>
+            <FormRow label="说明">
+              <Textarea
+                value={description}
+                onInput={e => setDescription(e.detail.value)}
+                placeholder="使用场景 · 限制条件 · 等"
+                placeholderStyle="color:#C4AD98;font-size:13px"
+                maxlength={120}
+                cursorSpacing={150}
+                adjustPosition
+                style={{ ...inputStyle, height: "70px", lineHeight: "1.6", paddingTop: "10px", paddingBottom: "10px", width: "100%", boxSizing: "border-box" }}
+              />
+            </FormRow>
 
-          <FormRow label="有效天数">
-            <Input
-              type="number"
-              value={validDays}
-              onInput={e => setValidDays(e.detail.value)}
-              placeholder="180"
-              placeholderStyle="color:#C4AD98;font-size:13px"
-              cursorSpacing={120}
-              adjustPosition
-              style={inputStyle}
-            />
-          </FormRow>
-        </SectionCard>
+            <FormRow label="有效天数">
+              <Input
+                type="number"
+                value={validDays}
+                onInput={e => setValidDays(e.detail.value)}
+                cursorSpacing={120}
+                adjustPosition
+                style={inputStyle}
+              />
+            </FormRow>
+          </SectionCard>
+        )}
 
-        {/* 结果反馈 */}
         {lastResult && (
           <View
             className="mt-4 p-3"
@@ -384,7 +346,6 @@ export default function StaffGrantCoupon() {
         )}
       </View>
 
-      {/* 底部提交栏 */}
       <View
         onClick={handleSubmit}
         style={{

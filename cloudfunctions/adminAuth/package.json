@@ -1,0 +1,7 @@
+{
+  "name": "adminAuth",
+  "version": "0.1.0",
+  "description": "管理员后台登录·SMS 验证码 + HMAC token",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}
