@@ -1,0 +1,7 @@
+{
+  "name": "updateUserProfile",
+  "version": "0.1.0",
+  "description": "更新用户昵称/头像（非敏感字段）",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

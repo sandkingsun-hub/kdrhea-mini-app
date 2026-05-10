@@ -1,5 +1,5 @@
-// 我的 · Tab 3 · 用户卡 + 流水 + 订单 + 邀请
-import { Text, View } from "@tarojs/components";
+// 我的 · Tab 4 · 用户卡 + 入口列表
+import { Image, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -7,78 +7,39 @@ import "./index.scss";
 
 interface User {
   _openid: string;
+  nickname: string | null;
   phone: string | null;
+  avatarUrl: string | null;
+  avatarKind: string | null;
   registeredAt: string;
   activatedFromOldCustomer: boolean;
   role: string;
 }
 
-interface Account {
-  balance: number;
-  totalEarned: number;
-  totalSpent: number;
-  pendingPoints: number;
-}
-
-interface PointsLog {
-  _id: string;
-  delta: number;
-  type: string;
-  description: string;
-  createdAt: string;
-  status: string;
-}
-
-interface Order {
-  _id: string;
-  orderNo: string;
-  items: { name: string; qty: number }[];
-  status: string;
-  cashAmountFen: number;
-  pointsUsed: number;
-  paidAt: string | null;
-  createdAt: string;
-}
-
-const TYPE_LABEL: Record<string, string> = {
-  earn_old_customer_activation: "老客激活",
-  earn_self_consume: "消费返利",
-  earn_referral: "推荐返利",
-  earn_in_store_qr: "到店扫码",
-  earn_other: "活动奖励",
-  spend_deduct: "消费抵扣",
-  spend_redeem_sku: "积分兑换",
-  spend_gift: "礼品兑换",
-  expire: "积分到期",
-  admin_adjust: "客服调整",
+const AVATAR_ICON_MAP: Record<string, string> = {
+  default: "i-mdi-account-circle-outline",
+  flower: "i-mdi-flower-outline",
+  leaf: "i-mdi-leaf",
+  feather: "i-mdi-feather",
+  spa: "i-mdi-spa-outline",
+  rose: "i-mdi-rose",
+  cup: "i-mdi-cup-outline",
+  music: "i-mdi-music-note-outline",
+  paw: "i-mdi-paw",
+  coffee: "i-mdi-coffee-outline",
+  airplane: "i-mdi-airplane",
+  fire: "i-mdi-fire",
 };
 
-const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending_payment: "待支付",
-  paid: "已支付",
-  cancelled: "已取消",
-  refunded: "已退款",
-  expired: "已超时",
-};
-
-function fenToYuan(n: number) {
-  return (n / 100).toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-}
-function formatPoints(n: number) {
-  return n.toLocaleString("zh-CN");
-}
-function shortDate(iso: string) {
-  if (!iso) {
+function maskPhone(p: string | null) {
+  if (!p || p.length < 7) {
     return "";
   }
-  return iso.slice(5, 16).replace("T", " ");
+  return `${p.slice(0, 3)} **** ${p.slice(-4)}`;
 }
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
-  const [account, setAccount] = useState<Account | null>(null);
-  const [logs, setLogs] = useState<PointsLog[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
 
   const callCloud = async (name: string, data?: any): Promise<any> => {
     try {
@@ -99,25 +60,14 @@ export default function Profile() {
     if (lg?.ok && lg.user) {
       setUser({
         _openid: lg.user._openid,
-        phone: lg.user.phone,
+        nickname: lg.user.nickname || null,
+        phone: lg.user.phone || null,
+        avatarUrl: lg.user.avatarUrl || null,
+        avatarKind: lg.user.avatarKind || "default",
         registeredAt: lg.user.registeredAt,
         activatedFromOldCustomer: lg.user.activatedFromOldCustomer,
         role: lg.user.role || "customer",
       });
-    }
-    const acc = await callCloud("getMyAccount", { logsLimit: 8 });
-    if (acc?.ok) {
-      setAccount({
-        balance: acc.account.balance,
-        totalEarned: acc.account.totalEarned,
-        totalSpent: acc.account.totalSpent,
-        pendingPoints: acc.account.pendingPoints,
-      });
-      setLogs(acc.recentLogs || []);
-    }
-    const or = await callCloud("listMyOrders", { limit: 5 });
-    if (or?.ok) {
-      setOrders(or.items);
     }
   };
 
@@ -136,260 +86,153 @@ export default function Profile() {
     });
   };
 
+  const goEdit = () => Taro.navigateTo({ url: "/pages/account/edit" });
+  const goRecords = (tab?: string) =>
+    Taro.navigateTo({ url: `/pages/account/records${tab ? `?tab=${tab}` : ""}` });
+
+  const avatarIcon = AVATAR_ICON_MAP[user?.avatarKind || "default"] || "i-mdi-account-circle-outline";
+  const displayName = user?.nickname || (user?.phone ? maskPhone(user.phone) : "微信用户");
+
   return (
     <PageWrapper navTitle="我的" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
       <View className="min-h-screen bg-kd-paper pb-24">
-        {/* 顶部 ME 标签 */}
+        {/* 顶部 ME */}
         <View className="px-6 pb-2 pt-6">
           <Text style={{ fontSize: "11px", letterSpacing: "0.32em", color: "#937761" }}>
             M  E
           </Text>
         </View>
 
-        {/* 用户信息 */}
-        <View className="px-6 pb-6 pt-4" style={{ borderBottom: "1px solid #E8DFD4" }}>
-          <Text
-            className="block"
-            style={{
-              fontFamily: "var(--kd-font-display)",
-              fontSize: "20px",
-              color: "#3C2218",
-              fontWeight: 400,
-            }}
-          >
-            {user?.phone ? user.phone : "微信用户"}
-          </Text>
-          <Text className="mt-1 block" style={{ fontSize: "11px", color: "#937761" }}>
-            {user
-              ? `注册于 ${user.registeredAt.slice(0, 10)}`
-              : "未登录"}
-          </Text>
-          {user?.activatedFromOldCustomer && (
+        {/* 用户卡 · 头像 + 信息 + 编辑入口 */}
+        <View
+          className="mx-5 mt-2"
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "20px 18px" }}
+          onClick={goEdit}
+        >
+          <View className="flex items-center">
+            {/* 头像 */}
             <View
-              className="mt-2 inline-block px-2 py-0.5"
               style={{
-                fontSize: "10px",
-                letterSpacing: "0.12em",
-                color: "#864D39",
-                background: "#F5EDE3",
-                border: "1px solid #DCC9B6",
+                width: "64px",
+                height: "64px",
+                border: "1px solid #864D39",
+                background: "#FBF7F1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                flexShrink: 0,
               }}
             >
-              已激活老客
+              {user?.avatarUrl
+                ? (
+                    <Image src={user.avatarUrl} style={{ width: "100%", height: "100%" }} mode="aspectFill" />
+                  )
+                : (
+                    <View className={avatarIcon} style={{ fontSize: "34px", color: "#3C2218" }} />
+                  )}
             </View>
-          )}
-        </View>
 
-        {/* 积分概览 */}
-        {account && (
-          <View className="px-6 py-6" style={{ borderBottom: "1px solid #E8DFD4" }}>
-            <View className="flex justify-between">
-              <View>
-                <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}>
-                  当前可用
-                </Text>
-                <Text
-                  className="mt-1 block"
-                  style={{
-                    fontFamily: "var(--kd-font-display)",
-                    fontSize: "24px",
-                    color: "#3C2218",
-                    fontWeight: 500,
-                  }}
-                >
-                  {formatPoints(account.balance)}
-                </Text>
-              </View>
-              <View>
-                <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}>
-                  累计获得
-                </Text>
-                <Text
-                  className="mt-1 block"
-                  style={{
-                    fontFamily: "var(--kd-font-display)",
-                    fontSize: "18px",
-                    color: "#5E3425",
-                    fontWeight: 400,
-                  }}
-                >
-                  {formatPoints(account.totalEarned)}
-                </Text>
-              </View>
-              <View>
-                <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}>
-                  待结算
-                </Text>
-                <Text
-                  className="mt-1 block"
-                  style={{
-                    fontFamily: "var(--kd-font-display)",
-                    fontSize: "18px",
-                    color: "#864D39",
-                    fontWeight: 400,
-                  }}
-                >
-                  {formatPoints(account.pendingPoints)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* 流水 */}
-        <View className="px-6 py-6" style={{ borderBottom: "1px solid #E8DFD4" }}>
-          <Text style={{ fontSize: "11px", letterSpacing: "0.24em", color: "#864D39", fontWeight: 500 }}>
-            POINTS  ·  流水
-          </Text>
-          <View className="mt-3">
-            {logs.length === 0 && (
-              <Text style={{ fontSize: "12px", color: "#937761" }}>暂无积分记录</Text>
-            )}
-            {logs.map(log => (
-              <View key={log._id} className="border-b py-3" style={{ borderColor: "#F5EDE3" }}>
-                <View className="flex items-baseline justify-between">
-                  <View className="flex-1">
-                    <Text className="block" style={{ fontSize: "13px", color: "#3C2218" }}>
-                      {TYPE_LABEL[log.type] || log.type}
-                    </Text>
-                    <Text className="mt-1 block" style={{ fontSize: "11px", color: "#937761" }}>
-                      {log.description}
-                    </Text>
-                    <Text className="mt-1 block" style={{ fontSize: "10px", color: "#A98D78" }}>
-                      {shortDate(log.createdAt)}
-                      {log.status === "pending" ? " · 待结算" : ""}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontFamily: "var(--kd-font-display)",
-                      fontSize: "16px",
-                      color: log.delta > 0 ? "#3C2218" : "#A98D78",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {log.delta > 0 ? "+" : ""}
-                    {log.delta}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* 订单 */}
-        <View className="px-6 py-6" style={{ borderBottom: "1px solid #E8DFD4" }}>
-          <Text style={{ fontSize: "11px", letterSpacing: "0.24em", color: "#864D39", fontWeight: 500 }}>
-            ORDERS  ·  我的订单
-          </Text>
-          <View className="mt-3">
-            {orders.length === 0 && (
-              <Text style={{ fontSize: "12px", color: "#937761" }}>暂无订单</Text>
-            )}
-            {orders.map(o => (
-              <View
-                key={o._id}
-                className="border-b py-3"
-                style={{ borderColor: "#F5EDE3" }}
-                onClick={() => Taro.navigateTo({ url: `/pages/checkout/index?orderId=${o._id}` })}
+            {/* 信息 */}
+            <View className="ml-4" style={{ flex: 1 }}>
+              <Text
+                className="block"
+                style={{
+                  fontFamily: "var(--kd-font-display)",
+                  fontSize: "18px",
+                  color: "#3C2218",
+                  fontWeight: 400,
+                  letterSpacing: "0.04em",
+                }}
               >
-                <View className="flex items-baseline justify-between">
-                  <View className="flex-1">
-                    <Text
-                      className="block"
-                      style={{
-                        fontFamily: "var(--kd-font-display)",
-                        fontSize: "14px",
-                        color: "#3C2218",
-                      }}
-                    >
-                      {o.items.map(it => it.name).join(" · ")}
-                    </Text>
-                    <Text className="mt-1 block" style={{ fontSize: "10px", color: "#A98D78" }}>
-                      {o.orderNo}
-                      {" · "}
-                      {ORDER_STATUS_LABEL[o.status] || o.status}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontFamily: "var(--kd-font-display)",
-                      fontSize: "14px",
-                      color: "#3C2218",
-                    }}
-                  >
-                    {o.cashAmountFen > 0 ? `¥${fenToYuan(o.cashAmountFen)}` : `${formatPoints(o.pointsUsed)}分`}
-                  </Text>
+                {displayName}
+              </Text>
+              {user?.phone && user.nickname && (
+                <Text className="mt-1 block" style={{ fontSize: "11px", color: "#864D39", letterSpacing: "0.04em" }}>
+                  {maskPhone(user.phone)}
+                </Text>
+              )}
+              <Text className="mt-1 block" style={{ fontSize: "10px", color: "#937761" }}>
+                {user
+                  ? `注册于 ${user.registeredAt.slice(0, 10)}`
+                  : "未登录"}
+              </Text>
+              {user?.activatedFromOldCustomer && (
+                <View
+                  className="mt-2 inline-block px-2"
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.12em",
+                    color: "#864D39",
+                    background: "#F5EDE3",
+                    border: "1px solid #DCC9B6",
+                    lineHeight: "18px",
+                  }}
+                >
+                  已激活老客
                 </View>
-              </View>
-            ))}
+              )}
+            </View>
+
+            {/* 编辑箭头 */}
+            <View className="i-mdi-chevron-right" style={{ fontSize: "18px", color: "#937761", marginLeft: "8px" }} />
           </View>
         </View>
 
         {/* 操作入口 */}
-        <View className="px-6 py-2">
-          <View
-            className="flex items-center justify-between border-b py-4"
-            style={{ borderColor: "#E8DFD4" }}
+        <View className="mt-5 px-6">
+          <MenuItem
+            icon="i-mdi-receipt-text-outline"
+            label="订单与积分"
+            onClick={() => goRecords()}
+          />
+          <MenuItem
+            icon="i-mdi-calendar-check-outline"
+            label="我的预约"
             onClick={() => Taro.navigateTo({ url: "/pages/appointment/list" })}
-          >
-            <Text style={{ fontSize: "13px", color: "#3C2218" }}>我的预约</Text>
-            <Text style={{ fontSize: "11px", color: "#937761" }}>→</Text>
-          </View>
-          <View
-            className="flex items-center justify-between border-b py-4"
-            style={{ borderColor: "#E8DFD4" }}
+          />
+          <MenuItem
+            icon="i-mdi-share-variant-outline"
+            label="分享给在意的人"
             onClick={handleInvite}
-          >
-            <Text style={{ fontSize: "13px", color: "#3C2218" }}>分享给在意的人</Text>
-            <Text style={{ fontSize: "11px", color: "#937761" }}>→</Text>
-          </View>
-          <View
-            className="flex items-center justify-between border-b py-4"
-            style={{ borderColor: "#E8DFD4" }}
+          />
+          <MenuItem
+            icon="i-mdi-ticket-percent-outline"
+            label="我的优惠"
             onClick={() => Taro.showToast({ title: "我的优惠 · 待开发", icon: "none" })}
-          >
-            <Text style={{ fontSize: "13px", color: "#3C2218" }}>我的优惠</Text>
-            <Text style={{ fontSize: "11px", color: "#937761" }}>→</Text>
-          </View>
-          <View
-            className="flex items-center justify-between border-b py-4"
-            style={{ borderColor: "#E8DFD4" }}
+          />
+          <MenuItem
+            icon="i-mdi-headset"
+            label="联系客服"
             onClick={() => Taro.showToast({ title: "联系客服 · 待开发", icon: "none" })}
-          >
-            <Text style={{ fontSize: "13px", color: "#3C2218" }}>联系客服</Text>
-            <Text style={{ fontSize: "11px", color: "#937761" }}>→</Text>
-          </View>
+          />
 
-          {/* 员工入口 · 仅 staff/admin 可见 · 客户完全不显示 */}
+          {/* 员工入口 · 仅 staff/admin 可见 */}
           {(user?.role === "staff" || user?.role === "admin") && (
             <>
-              <View
-                className="flex items-center justify-between border-b py-4"
-                style={{ borderColor: "#E8DFD4" }}
+              <View className="mb-2 mt-6">
+                <Text style={{ fontSize: "10px", letterSpacing: "0.24em", color: "#A98D78" }}>
+                  S  T  A  F  F
+                </Text>
+              </View>
+              <MenuItem
+                icon="i-mdi-qrcode-scan"
+                label="扫码工具"
+                staff
                 onClick={() => Taro.navigateTo({ url: "/pages/staff/scanner" })}
-              >
-                <Text style={{ fontSize: "13px", color: "#864D39", letterSpacing: "0.08em" }}>
-                  STAFF · 扫码工具
-                </Text>
-                <Text style={{ fontSize: "11px", color: "#864D39" }}>→</Text>
-              </View>
-              <View
-                className="flex items-center justify-between border-b py-4"
-                style={{ borderColor: "#E8DFD4" }}
+              />
+              <MenuItem
+                icon="i-mdi-calendar-text-outline"
+                label="预约管理"
+                staff
                 onClick={() => Taro.navigateTo({ url: "/pages/staff/appointments" })}
-              >
-                <Text style={{ fontSize: "13px", color: "#864D39", letterSpacing: "0.08em" }}>
-                  STAFF · 预约管理
-                </Text>
-                <Text style={{ fontSize: "11px", color: "#864D39" }}>→</Text>
-              </View>
+              />
             </>
           )}
         </View>
 
         {/* footer dev */}
-        <View className="mt-6 px-6 text-center">
+        <View className="mt-8 px-6 text-center">
           <Text
             style={{ fontSize: "10px", letterSpacing: "0.12em", color: "#C4AD98" }}
             onClick={() => Taro.navigateTo({ url: "/pages/devtools/index" })}
@@ -399,5 +242,45 @@ export default function Profile() {
         </View>
       </View>
     </PageWrapper>
+  );
+}
+
+function MenuItem({
+  icon,
+  label,
+  onClick,
+  staff = false,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+  staff?: boolean;
+}) {
+  return (
+    <View
+      className="flex items-center justify-between border-b py-4"
+      style={{ borderColor: "#E8DFD4" }}
+      onClick={onClick}
+    >
+      <View className="flex items-center">
+        <View
+          className={icon}
+          style={{ fontSize: "18px", color: staff ? "#864D39" : "#3C2218", marginRight: "12px" }}
+        />
+        <Text
+          style={{
+            fontSize: "13px",
+            color: staff ? "#864D39" : "#3C2218",
+            letterSpacing: staff ? "0.06em" : "0.02em",
+          }}
+        >
+          {label}
+        </Text>
+      </View>
+      <View
+        className="i-mdi-chevron-right"
+        style={{ fontSize: "16px", color: staff ? "#864D39" : "#937761" }}
+      />
+    </View>
   );
 }
