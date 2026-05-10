@@ -187,6 +187,7 @@ export default function AccountEdit() {
               height: "84px",
               border: "1px solid #864D39",
               background: "#FAF7F3",
+              borderRadius: "999px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -209,7 +210,7 @@ export default function AccountEdit() {
         {/* 头像选择 · 上传照片 */}
         <View
           className="mt-6"
-          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "18px 16px" }}
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "16px", padding: "18px 16px" }}
         >
           <SectionLabel text="头像" />
 
@@ -219,6 +220,7 @@ export default function AccountEdit() {
             style={{
               background: "#FBF7F1",
               border: "1px solid #DCC9B6",
+              borderRadius: "12px",
               padding: "12px 14px",
             }}
           >
@@ -244,6 +246,7 @@ export default function AccountEdit() {
                     aspectRatio: "1 / 1",
                     background: active ? "#3C2218" : "#FBF7F1",
                     border: active ? "1px solid #3C2218" : "1px solid #DCC9B6",
+                    borderRadius: "999px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -262,7 +265,7 @@ export default function AccountEdit() {
         {/* 昵称 */}
         <View
           className="mt-5"
-          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "18px 16px" }}
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "16px", padding: "18px 16px" }}
         >
           <SectionLabel text="昵称" />
           <View className="mt-3 flex items-center">
@@ -294,9 +297,10 @@ export default function AccountEdit() {
                 color: "#FBF7F1",
                 fontSize: "12px",
                 letterSpacing: "0.08em",
-                padding: "0 16px",
+                padding: "0 18px",
                 height: "44px",
                 lineHeight: "44px",
+                borderRadius: "999px",
               }}
             >
               {savingNickname ? "保存中" : "保存"}
@@ -307,7 +311,7 @@ export default function AccountEdit() {
         {/* 手机号 · 仅微信授权 */}
         <View
           className="mt-5"
-          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "18px 16px" }}
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "16px", padding: "18px 16px" }}
         >
           <SectionLabel text="手机号" />
           <View
@@ -315,6 +319,7 @@ export default function AccountEdit() {
             style={{
               background: "#FBF7F1",
               border: "1px solid #DCC9B6",
+              borderRadius: "10px",
               paddingLeft: "12px",
               paddingRight: "12px",
               height: "44px",
@@ -340,7 +345,7 @@ export default function AccountEdit() {
                 height: "26px",
                 lineHeight: "26px",
                 border: "1px solid #DCC9B6",
-                borderRadius: 0,
+                borderRadius: "999px",
               }}
             >
               {bindingPhone ? "更新中" : (user.phone ? "更换" : "绑定")}

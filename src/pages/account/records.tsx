@@ -126,7 +126,7 @@ export default function AccountRecords() {
         {/* tab 切换 */}
         <View
           className="mt-5 flex"
-          style={{ border: "1px solid #DCC9B6", background: "#FBF7F1" }}
+          style={{ border: "1px solid #DCC9B6", background: "#FBF7F1", borderRadius: "999px", overflow: "hidden" }}
         >
           {TABS.map((t, i) => {
             const active = i === tabIdx;
@@ -181,7 +181,7 @@ export default function AccountRecords() {
                       <View
                         key={o._id}
                         className="mb-3 p-4"
-                        style={{ background: "#FAF7F3", border: "1px solid #E8DFD4" }}
+                        style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "12px" }}
                         onClick={() => Taro.navigateTo({ url: `/pages/checkout/index?orderId=${o._id}` })}
                       >
                         <View className="flex items-baseline justify-between">
@@ -238,7 +238,7 @@ export default function AccountRecords() {
                       <View
                         key={log._id}
                         className="mb-2 p-4"
-                        style={{ background: "#FAF7F3", border: "1px solid #E8DFD4" }}
+                        style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "12px" }}
                       >
                         <View className="flex items-baseline justify-between">
                           <View style={{ flex: 1, paddingRight: "10px" }}>

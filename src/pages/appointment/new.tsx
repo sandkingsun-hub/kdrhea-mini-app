@@ -173,11 +173,12 @@ export default function AppointmentNew() {
           style={{
             background: "#FAF7F3",
             border: "1px solid #DCC9B6",
+            borderRadius: "16px",
             padding: "20px 16px",
             textAlign: "center",
           }}
         >
-          <View className="mx-auto" style={{ width: "44px", height: "44px", border: "1px solid #864D39", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <View className="mx-auto" style={{ width: "48px", height: "48px", border: "1px solid #864D39", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <View className="i-mdi-phone-outline" style={{ fontSize: "22px", color: "#3C2218" }} />
           </View>
           <Text className="mt-3 block" style={{ fontSize: "10px", letterSpacing: "0.32em", color: "#937761" }}>
@@ -211,13 +212,13 @@ export default function AppointmentNew() {
         {/* 表单卡 */}
         <View
           className="mt-5"
-          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "20px 18px" }}
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "16px", padding: "20px 18px" }}
         >
           {/* 项目类型 · 2 tab */}
           <SectionLabel text="项目类型" />
           <View
             className="mt-2 flex"
-            style={{ border: "1px solid #DCC9B6", background: "#FBF7F1" }}
+            style={{ border: "1px solid #DCC9B6", background: "#FBF7F1", borderRadius: "999px", overflow: "hidden" }}
           >
             {CATEGORIES.map((c, i) => {
               const active = i === categoryIdx;
@@ -369,7 +370,7 @@ export default function AppointmentNew() {
             <SectionLabel text="期望时段" />
             <View
               className="mt-2 flex"
-              style={{ border: "1px solid #DCC9B6", background: "#FBF7F1" }}
+              style={{ border: "1px solid #DCC9B6", background: "#FBF7F1", borderRadius: "12px", overflow: "hidden" }}
             >
               {SLOTS.map((s, i) => {
                 const active = i === slotIdx;

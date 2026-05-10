@@ -106,7 +106,7 @@ export default function Profile() {
         {/* 用户卡 · 头像 + 信息 + 编辑入口 */}
         <View
           className="mx-5 mt-2"
-          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", padding: "20px 18px" }}
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "16px", padding: "20px 18px" }}
           onClick={goEdit}
         >
           <View className="flex items-center">
@@ -117,6 +117,7 @@ export default function Profile() {
                 height: "64px",
                 border: "1px solid #864D39",
                 background: "#FBF7F1",
+                borderRadius: "999px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -159,14 +160,16 @@ export default function Profile() {
               </Text>
               {user?.activatedFromOldCustomer && (
                 <View
-                  className="mt-2 inline-block px-2"
+                  className="mt-2 inline-block"
                   style={{
                     fontSize: "10px",
                     letterSpacing: "0.12em",
                     color: "#864D39",
                     background: "#F5EDE3",
                     border: "1px solid #DCC9B6",
-                    lineHeight: "18px",
+                    borderRadius: "999px",
+                    padding: "0 10px",
+                    lineHeight: "20px",
                   }}
                 >
                   已激活老客

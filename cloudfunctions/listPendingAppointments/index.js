@@ -26,7 +26,9 @@ exports.main = async (event = {}) => {
   const _ = db.command;
 
   const where = {};
-  if (status) {
+  if (status === 'all') {
+    // 显式要求全部·不加 status 条件
+  } else if (status) {
     where.status = status;
   } else {
     // 默认查待处理（pending + confirmed · 排除已完成/取消）

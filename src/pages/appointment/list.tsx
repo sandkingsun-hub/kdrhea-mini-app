@@ -24,7 +24,7 @@ const STATUS_LABEL: Record<string, { text: string; color: string; bg: string }> 
   pending: { text: "申请中", color: "#864D39", bg: "#F5EDE3" },
   confirmed: { text: "已确认", color: "#3C2218", bg: "#EBDFD1" },
   rescheduled: { text: "已改约", color: "#864D39", bg: "#F5EDE3" },
-  rejected: { text: "未能安排", color: "#A98D78", bg: "#F0EAE0" },
+  rejected: { text: "无法安排", color: "#A98D78", bg: "#F0EAE0" },
   cancelled: { text: "已取消", color: "#A98D78", bg: "#F0EAE0" },
   completed: { text: "已完成", color: "#5E3425", bg: "#DCC9B6" },
 };
@@ -77,12 +77,14 @@ export default function AppointmentList() {
               <Text style={{ fontSize: "13px", color: "#937761" }}>暂无预约</Text>
               <View
                 onClick={() => Taro.navigateTo({ url: "/pages/appointment/new" })}
-                className="mx-auto mt-4 inline-block px-6 py-2"
+                className="mx-auto mt-4 inline-block"
                 style={{
                   background: "#3C2218",
                   color: "#FBF7F1",
                   fontSize: "12px",
                   letterSpacing: "0.16em",
+                  padding: "10px 24px",
+                  borderRadius: "999px",
                 }}
               >
                 立即预约
@@ -97,7 +99,7 @@ export default function AppointmentList() {
               <View
                 key={a._id}
                 className="mb-4 p-4"
-                style={{ background: "#FAF7F3", border: "1px solid #E8DFD4" }}
+                style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "12px" }}
               >
                 <View className="flex items-baseline justify-between">
                   <Text
@@ -111,13 +113,14 @@ export default function AppointmentList() {
                     {a.skuName}
                   </Text>
                   <View
-                    className="px-2"
                     style={{
                       background: s.bg,
                       color: s.color,
                       fontSize: "11px",
                       letterSpacing: "0.08em",
-                      lineHeight: "20px",
+                      padding: "3px 12px",
+                      borderRadius: "999px",
+                      flexShrink: 0,
                     }}
                   >
                     {s.text}
@@ -192,12 +195,14 @@ export default function AppointmentList() {
           <View className="text-center" style={{ marginTop: "20px" }}>
             <View
               onClick={() => Taro.navigateTo({ url: "/pages/appointment/new" })}
-              className="mx-auto inline-block px-6 py-2"
+              className="mx-auto inline-block"
               style={{
                 background: "#3C2218",
                 color: "#FBF7F1",
                 fontSize: "12px",
                 letterSpacing: "0.16em",
+                padding: "10px 24px",
+                borderRadius: "999px",
               }}
             >
               新建预约
