@@ -37,7 +37,7 @@ const QUICK_ENTRIES = [
   { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约", route: "/pages/appointment/new" },
   { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "" },
   { key: "journal", icon: "i-mdi-book-open-variant", label: "美学日记", route: "" },
-  { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "" },
+  { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "/pages/coupons/index" },
 ];
 
 export default function Index() {
