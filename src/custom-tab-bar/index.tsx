@@ -26,18 +26,27 @@ function getCurrentTabIdx(): number {
 }
 
 export default function CustomTabBar() {
-  // lazy init · 防 tabBar 重新挂载丢失 state
-  const [selected, setSelected] = useState(getCurrentTabIdx);
+  // 乐观 UI：optimistic 是用户点击意图（立即变色）
+  // routeIdx 是路由真值（switchTab 完成后由 useDidShow 触发刷新）
+  // 真值优先于乐观值·避免外部跳转后 tabBar 仍显示旧的 optimistic
+  const [optimistic, setOptimistic] = useState<number | null>(null);
+  const [routeIdx, setRouteIdx] = useState<number>(getCurrentTabIdx);
 
   useDidShow(() => {
-    setSelected(getCurrentTabIdx());
+    const idx = getCurrentTabIdx();
+    setRouteIdx(idx);
+    // 路由已落地·清掉乐观值（如果跟路由一致）
+    // 不一致时保留乐观值·因为 useDidShow 可能在 switchTab 完成前误触发
+    setOptimistic(prev => (prev === null || prev === idx ? null : prev));
   });
+
+  const selected = optimistic ?? routeIdx;
 
   const handle = (i: number) => {
     if (i === selected) {
       return;
     }
-    setSelected(i); // 立即变色 · 不等 switchTab 完成
+    setOptimistic(i); // 立即变色
     Taro.switchTab({ url: TABS[i].pagePath });
   };
 
@@ -69,8 +78,7 @@ export default function CustomTabBar() {
             paddingBottom: "20rpx",
           }}
         >
-          {/* 英文：letter-spacing 让最后一个字符也带间距导致整段视觉左偏·
-              用 paddingLeft 抵消末端 spacing 让视觉居中 */}
+          {/* 英文 letter-spacing 末端余量·用 paddingLeft 抵消保证视觉居中 */}
           <CoverView
             style={{
               fontSize: "20rpx",
