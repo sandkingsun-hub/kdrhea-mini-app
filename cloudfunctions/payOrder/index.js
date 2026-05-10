@@ -166,6 +166,40 @@ exports.main = async (event = {}) => {
     }
   }
 
+  // 7. 自动入袋：含 experience_voucher / physical_gift 类型的 SKU 发对应券
+  // 礼遇兑换走这条路径
+  const couponsGranted = [];
+  for (const it of order.items) {
+    const sku = (await db.collection('sku').doc(it.skuId).get()).data;
+    if (!sku) continue;
+    const couponType = sku.type === 'experience_voucher' ? 'experience'
+      : sku.type === 'physical_gift' ? 'physical_gift'
+      : null;
+    if (!couponType) continue;
+
+    // qty 张券
+    for (let q = 0; q < it.qty; q++) {
+      const r = await cloud.callFunction({
+        name: 'grantCoupon',
+        data: {
+          targetOpenid: openid,
+          couponName: sku.name,
+          couponType,
+          value: sku.description || '',
+          description: sku.description || '',
+          validDays: 180,
+          source: 'gifts_redeem',
+          sourceRefId: orderId,
+          sourceRefType: 'order',
+          __internal_caller: 'payOrder',
+        },
+      });
+      if (r.result?.ok) {
+        couponsGranted.push({ couponId: r.result.couponId, couponNo: r.result.couponNo, couponName: sku.name });
+      }
+    }
+  }
+
   // 拉最终账户余额
   const finalAcc = await db.collection('points_account').where({ _openid: openid }).limit(1).get();
   const balanceAfter = finalAcc.data[0]?.balance ?? 0;
@@ -183,5 +217,6 @@ exports.main = async (event = {}) => {
     rewardPoints,
     inviterOpenid,
     balanceAfter,
+    couponsGranted,
   };
 };

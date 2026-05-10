@@ -135,12 +135,66 @@ export default function StaffScanner() {
     }
   });
 
+  // 尝试解析为券码 payload {t:'coupon', no, vt}
+  const tryParseCoupon = (result: string): { no: string; vt: string } | null => {
+    if (!result || result[0] !== "{") {
+      return null;
+    }
+    try {
+      const j = JSON.parse(result);
+      if (j?.t === "coupon" && j.no && j.vt) {
+        return { no: j.no, vt: j.vt };
+      }
+    } catch {
+      // 不是 JSON
+    }
+    return null;
+  };
+
+  // 核销券 · 弹确认 → redeemCoupon → 反馈
+  const redeemCouponFlow = async (no: string, vt: string) => {
+    const confirm = await Taro.showModal({
+      title: "核销券",
+      content: `券号 ${no}\n确认核销？`,
+      confirmText: "核销",
+      cancelText: "取消",
+    });
+    if (!confirm.confirm) {
+      return;
+    }
+    const r = await callCloud("redeemCoupon", { couponNo: no, verifyToken: vt });
+    if (r?.ok) {
+      setLastResult(`✅ 已核销 · ${r.couponName}`);
+      Taro.showToast({ title: "核销成功", icon: "success" });
+    } else {
+      const map: Record<string, string> = {
+        COUPON_NOT_FOUND: "券不存在",
+        COUPON_NOT_ACTIVE: "券已失效或已使用",
+        COUPON_EXPIRED: "券已过期",
+        VERIFY_TOKEN_MISMATCH: "校验失败 · 该券非法",
+        PERMISSION_DENIED: "权限不足",
+      };
+      const msg = map[r?.code] || `失败 ${r?.code || ""}`;
+      setLastResult(`❌ ${msg}`);
+      Taro.showToast({ title: msg, icon: "none" });
+    }
+  };
+
   // 调微信扫码
   const handleScan = async () => {
     try {
       const r = await Taro.scanCode({ scanType: ["qrCode"] });
-      // 这里假设客户码 result 直接是 openid（MVP）
-      setCustomerOpenid(r.result || "");
+      const result = r.result || "";
+
+      // 尝试识别为券
+      const coupon = tryParseCoupon(result);
+      if (coupon) {
+        await redeemCouponFlow(coupon.no, coupon.vt);
+        return;
+      }
+
+      // 否则当客户 openid 走原流程
+      setCustomerOpenid(result);
       setLastResult("");
     } catch {
       Taro.showToast({ title: "扫码取消", icon: "none" });

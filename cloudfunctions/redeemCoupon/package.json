@@ -1,0 +1,7 @@
+{
+  "name": "redeemCoupon",
+  "version": "0.1.0",
+  "description": "员工核销券",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

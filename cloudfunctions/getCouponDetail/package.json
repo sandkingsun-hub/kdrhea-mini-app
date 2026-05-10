@@ -1,0 +1,7 @@
+{
+  "name": "getCouponDetail",
+  "version": "0.1.0",
+  "description": "单券详情",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

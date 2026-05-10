@@ -1,0 +1,7 @@
+{
+  "name": "listMyCoupons",
+  "version": "0.1.0",
+  "description": "拉用户的券包",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}

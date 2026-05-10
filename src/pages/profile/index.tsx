@@ -202,7 +202,7 @@ export default function Profile() {
           <MenuItem
             icon="i-mdi-ticket-percent-outline"
             label="我的优惠"
-            onClick={() => Taro.showToast({ title: "我的优惠 · 待开发", icon: "none" })}
+            onClick={() => Taro.navigateTo({ url: "/pages/coupons/index" })}
           />
           <MenuItem
             icon="i-mdi-headset"

@@ -1,0 +1,7 @@
+{
+  "name": "grantCoupon",
+  "version": "0.1.0",
+  "description": "给用户发券（员工/系统）",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}
