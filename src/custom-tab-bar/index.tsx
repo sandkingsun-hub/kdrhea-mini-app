@@ -10,24 +10,34 @@ const TABS = [
   { pagePath: "/pages/profile/index", text: "我的", code: "ME" },
 ];
 
-export default function CustomTabBar() {
-  const [selected, setSelected] = useState(0);
-
-  useDidShow(() => {
+function getCurrentTabIdx(): number {
+  try {
     const pages = Taro.getCurrentPages();
     const cur = pages.at(-1);
     if (!cur) {
-      return;
+      return 0;
     }
     const route = `/${cur.route}`;
     const idx = TABS.findIndex(t => t.pagePath === route);
-    if (idx >= 0) {
-      setSelected(idx);
-    }
+    return idx >= 0 ? idx : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export default function CustomTabBar() {
+  // lazy init · 防 tabBar 重新挂载丢失 state
+  const [selected, setSelected] = useState(getCurrentTabIdx);
+
+  useDidShow(() => {
+    setSelected(getCurrentTabIdx());
   });
 
   const handle = (i: number) => {
-    setSelected(i);
+    if (i === selected) {
+      return;
+    }
+    setSelected(i); // 立即变色 · 不等 switchTab 完成
     Taro.switchTab({ url: TABS[i].pagePath });
   };
 
@@ -59,12 +69,16 @@ export default function CustomTabBar() {
             paddingBottom: "20rpx",
           }}
         >
+          {/* 英文：letter-spacing 让最后一个字符也带间距导致整段视觉左偏·
+              用 paddingLeft 抵消末端 spacing 让视觉居中 */}
           <CoverView
             style={{
               fontSize: "20rpx",
               letterSpacing: "0.28em",
+              paddingLeft: "0.28em",
               color: selected === i ? "#3C2218" : "#A98D78",
               fontWeight: selected === i ? 500 : 300,
+              textAlign: "center",
             }}
           >
             {t.code.split("").join(" ")}
@@ -74,7 +88,9 @@ export default function CustomTabBar() {
               fontSize: "20rpx",
               marginTop: "6rpx",
               letterSpacing: "0.12em",
+              paddingLeft: "0.12em",
               color: selected === i ? "#3C2218" : "#937761",
+              textAlign: "center",
             }}
           >
             {t.text}
