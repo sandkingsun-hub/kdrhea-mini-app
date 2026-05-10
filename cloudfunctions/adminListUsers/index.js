@@ -27,19 +27,22 @@ function verifyAdminToken(token) {
 }
 
 exports.main = async (event = {}) => {
-  const { adminToken, search = "", limit = 50, skip = 0 } = event;
+  const { adminToken, search = "", roles = null, limit = 50, skip = 0 } = event;
   const admin = verifyAdminToken(adminToken);
   if (!admin) return { ok: false, code: "UNAUTHORIZED" };
 
   const cap = Math.min(limit, 200);
 
-  // 搜手机号·支持部分匹配
   const where = {};
+  // role 过滤·分配券时只拉员工
+  if (Array.isArray(roles) && roles.length > 0) {
+    where.role = _.in(roles);
+  }
+
+  // 搜手机号·支持部分匹配
   if (search && /^\d+$/.test(search)) {
-    // 完全数字·按 phone 模糊匹配
     where.phone = db.RegExp({ regexp: search, options: "i" });
   } else if (search) {
-    // 否则搜 nickname
     where.nickname = db.RegExp({ regexp: search, options: "i" });
   }
 
