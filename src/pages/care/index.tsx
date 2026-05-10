@@ -3,6 +3,7 @@ import { ScrollView, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
+import { syncTabBarSelected } from "~/utils/tabbarSync";
 import "./index.scss";
 
 interface Sku {
@@ -73,6 +74,7 @@ export default function Care() {
     load(0);
   });
   useDidShow(() => {
+    syncTabBarSelected(1);
     load(active);
   });
 

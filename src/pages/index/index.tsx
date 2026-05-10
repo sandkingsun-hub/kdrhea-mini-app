@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cache } from "~/cache";
 import PageWrapper from "~/components/PageWrapper";
 import PrivacyPolicyPopup from "~/components/PrivacyPolicyPopup";
+import { syncTabBarSelected } from "~/utils/tabbarSync";
 import "./index.scss";
 
 interface Account {
@@ -90,6 +91,7 @@ export default function Index() {
     loadHome();
   });
   useDidShow(() => {
+    syncTabBarSelected(0);
     if (!showPrivacyPolicy) {
       loadHome();
     }

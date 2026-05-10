@@ -3,6 +3,7 @@ import { ScrollView, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
+import { syncTabBarSelected } from "~/utils/tabbarSync";
 
 interface Sku {
   _id: string;
@@ -63,7 +64,10 @@ export default function Gifts() {
   };
 
   useLoad(() => load(0));
-  useDidShow(() => load(active));
+  useDidShow(() => {
+    syncTabBarSelected(2);
+    load(active);
+  });
 
   const goDetail = (sku: Sku) => {
     Taro.navigateTo({ url: `/pages/sku-detail/index?id=${sku._id}` });

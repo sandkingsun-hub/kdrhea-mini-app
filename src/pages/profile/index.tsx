@@ -3,6 +3,7 @@ import { Image, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
+import { syncTabBarSelected } from "~/utils/tabbarSync";
 import "./index.scss";
 
 interface User {
@@ -72,7 +73,10 @@ export default function Profile() {
   };
 
   useLoad(load);
-  useDidShow(load);
+  useDidShow(() => {
+    syncTabBarSelected(3);
+    load();
+  });
 
   const handleInvite = async () => {
     const r = await callCloud("generateReferralLink", { channel: "direct_share" });
