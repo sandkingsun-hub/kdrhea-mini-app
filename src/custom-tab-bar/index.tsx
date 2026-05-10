@@ -1,7 +1,7 @@
 // KDRHEA 自定义 tabBar · 4 tab · 纯文字 letter-spacing 风
 import { CoverView } from "@tarojs/components";
 import Taro, { useDidShow } from "@tarojs/taro";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const TABS = [
   { pagePath: "/pages/index/index", text: "首页", code: "HOME" },
@@ -26,27 +26,31 @@ function getCurrentTabIdx(): number {
 }
 
 export default function CustomTabBar() {
-  // 乐观 UI：optimistic 是用户点击意图（立即变色）
-  // routeIdx 是路由真值（switchTab 完成后由 useDidShow 触发刷新）
-  // 真值优先于乐观值·避免外部跳转后 tabBar 仍显示旧的 optimistic
-  const [optimistic, setOptimistic] = useState<number | null>(null);
-  const [routeIdx, setRouteIdx] = useState<number>(getCurrentTabIdx);
+  const [selected, setSelected] = useState(getCurrentTabIdx);
+  // 用户最近一次点击意图·-1 表示无意图（如外部 navigateBack 切回）
+  const intentRef = useRef<number>(-1);
 
   useDidShow(() => {
     const idx = getCurrentTabIdx();
-    setRouteIdx(idx);
-    // 路由已落地·清掉乐观值（如果跟路由一致）
-    // 不一致时保留乐观值·因为 useDidShow 可能在 switchTab 完成前误触发
-    setOptimistic(prev => (prev === null || prev === idx ? null : prev));
+    if (intentRef.current === -1) {
+      // 无点击意图（外部触发的切换 · 比如 navigateBack 回 tab）
+      setSelected(idx);
+      return;
+    }
+    if (idx === intentRef.current) {
+      // 路由跟上意图了·清意图
+      setSelected(idx);
+      intentRef.current = -1;
+    }
+    // 否则路由还在同步中·保留 selected · 等下一次 useDidShow
   });
-
-  const selected = optimistic ?? routeIdx;
 
   const handle = (i: number) => {
     if (i === selected) {
       return;
     }
-    setOptimistic(i); // 立即变色
+    intentRef.current = i;
+    setSelected(i); // 立即变色
     Taro.switchTab({ url: TABS[i].pagePath });
   };
 
