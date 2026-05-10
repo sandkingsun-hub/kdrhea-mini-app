@@ -230,6 +230,12 @@ export default function Profile() {
                 staff
                 onClick={() => Taro.navigateTo({ url: "/pages/staff/appointments" })}
               />
+              <MenuItem
+                icon="i-mdi-ticket-percent-outline"
+                label="发券给客户"
+                staff
+                onClick={() => Taro.navigateTo({ url: "/pages/staff/grant-coupon" })}
+              />
             </>
           )}
         </View>
