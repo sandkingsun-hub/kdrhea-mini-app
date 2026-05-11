@@ -226,45 +226,43 @@ export default function CouponDetail() {
             }}
           />
 
-          {/* 二维码区 */}
+          {/* 二维码区 · Canvas 始终 mount（微信 Canvas 对条件渲染敏感）·用 display 控制显示 */}
           <View style={{ padding: "20px 0 18px", textAlign: "center" }}>
-            {isUsable
-              ? (
-                  <>
-                    <View
-                      className="mx-auto"
-                      style={{
-                        background: "#FBF7F1",
-                        border: "1px solid #DCC9B6",
-                        borderRadius: "12px",
-                        padding: "16px",
-                        width: "232px",
-                        height: "232px",
-                        boxSizing: "border-box",
-                      }}
-                    >
-                      <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
-                    </View>
-                    <Text className="mt-3 block" style={{ fontSize: "11px", color: "#864D39" }}>
-                      请向前台出示
-                    </Text>
-                  </>
-                )
-              : (
-                  <View
-                    className="mx-auto flex-center"
-                    style={{
-                      width: "200px",
-                      height: "60px",
-                      border: "1px solid #DCC9B6",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <Text style={{ fontFamily: "var(--kd-font-display)", fontSize: "16px", color: "#937761", letterSpacing: "0.18em" }}>
-                      {coupon.status === "used" ? "已 核 销" : "已 过 期"}
-                    </Text>
-                  </View>
-                )}
+            <View
+              className="mx-auto"
+              style={{
+                background: "#FBF7F1",
+                border: "1px solid #DCC9B6",
+                borderRadius: "12px",
+                padding: "16px",
+                width: "232px",
+                height: "232px",
+                boxSizing: "border-box",
+                display: isUsable ? "block" : "none",
+              }}
+            >
+              <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
+            </View>
+            {isUsable && (
+              <Text className="mt-3 block" style={{ fontSize: "11px", color: "#864D39" }}>
+                请向前台出示
+              </Text>
+            )}
+            {!isUsable && (
+              <View
+                className="mx-auto flex-center"
+                style={{
+                  width: "200px",
+                  height: "60px",
+                  border: "1px solid #DCC9B6",
+                  borderRadius: "12px",
+                }}
+              >
+                <Text style={{ fontFamily: "var(--kd-font-display)", fontSize: "16px", color: "#937761", letterSpacing: "0.18em" }}>
+                  {coupon.status === "used" ? "已 核 销" : "已 过 期"}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* 券号尾 */}
