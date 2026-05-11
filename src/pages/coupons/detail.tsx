@@ -60,40 +60,46 @@ export default function CouponDetail() {
     }
   };
 
-  // 重试 3 次·间隔 150ms·应对 Canvas mount 时序漂移
-  const drawQrOnce = (payload: string) => {
-    try {
-      const qr = qrcode(0, "M");
-      qr.addData(payload);
-      qr.make();
-      const moduleCount = qr.getModuleCount();
-
-      const ctx = Taro.createCanvasContext("coupon-qr");
-      const size = 200;
-      const cell = size / moduleCount;
-
-      ctx.setFillStyle("#FBF7F1");
-      ctx.fillRect(0, 0, size, size);
-      ctx.setFillStyle("#3C2218");
-      for (let r = 0; r < moduleCount; r++) {
-        for (let c = 0; c < moduleCount; c++) {
-          if (qr.isDark(r, c)) {
-            ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
-          }
-        }
-      }
-      ctx.draw();
-      return true;
-    } catch (e) {
-      console.warn("[coupon-qr] draw failed:", e);
-      return false;
-    }
-  };
-
-  // 完全 mirror qrcode/index.tsx 的写法：useLoad 内 await · setState · 立即 drawQr
-  // 之前的 useEffect 监听 + 双层 setTimeout 都不稳·改回最简模式
+  // 用微信 Canvas 2D 新 API（type="2d" + selectorQuery + getContext('2d')）
+  // 老的 createCanvasContext 在新版基础库 silently 不渲染
   const drawQr = (payload: string) => {
-    setTimeout(drawQrOnce, 200, payload);
+    setTimeout(() => {
+      const query = Taro.createSelectorQuery();
+      query.select("#coupon-qr")
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          if (!res?.[0]?.node) {
+            console.warn("[coupon-qr] canvas node not found", res);
+            return;
+          }
+          const canvas = res[0].node;
+          const ctx = canvas.getContext("2d");
+
+          const qr = qrcode(0, "M");
+          qr.addData(payload);
+          qr.make();
+          const moduleCount = qr.getModuleCount();
+
+          const size = 200;
+          // @ts-expect-error wx 由微信注入
+          const dpr = (typeof wx !== "undefined" && wx.getWindowInfo) ? wx.getWindowInfo().pixelRatio : 2;
+          canvas.width = size * dpr;
+          canvas.height = size * dpr;
+          ctx.scale(dpr, dpr);
+
+          const cell = size / moduleCount;
+          ctx.fillStyle = "#FBF7F1";
+          ctx.fillRect(0, 0, size, size);
+          ctx.fillStyle = "#3C2218";
+          for (let r = 0; r < moduleCount; r++) {
+            for (let c = 0; c < moduleCount; c++) {
+              if (qr.isDark(r, c)) {
+                ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
+              }
+            }
+          }
+        });
+    }, 200);
   };
 
   useLoad(async (options) => {
@@ -232,7 +238,7 @@ export default function CouponDetail() {
                 position: isUsable ? "relative" : "absolute",
               }}
             >
-              <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
+              <Canvas type="2d" id="coupon-qr" style={{ width: "200px", height: "200px" }} />
             </View>
             {isUsable && (
               <Text className="mt-3 block" style={{ fontSize: "11px", color: "#864D39" }}>
