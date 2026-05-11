@@ -1,7 +1,7 @@
 // 券详情 · 二维码核销
 // 二维码内容 = JSON {t:'coupon', no, vt}·员工 scanner 扫到后调 redeemCoupon
 import { Canvas, Text, View } from "@tarojs/components";
-import Taro, { useLoad } from "@tarojs/taro";
+import Taro, { useLoad, useReady } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
 import { useEffect, useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -45,6 +45,11 @@ function shortDate(iso: string) {
 export default function CouponDetail() {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
+
+  useReady(() => {
+    setPageReady(true);
+  });
 
   const callCloud = async (n: string, d?: any): Promise<any> => {
     try {
@@ -59,57 +64,55 @@ export default function CouponDetail() {
     }
   };
 
-  // Canvas 2D 新 API（Codex 调研推荐）：
-  // - await Taro.nextTick() 等本轮渲染提交（替代猜时机的 setTimeout）
-  // - fields({node:true, size:true}) 拿真实 canvas node + 实际 css size
-  // - setTransform 替代 scale·支持重画不累积变换
+  // Canvas 2D：page ready + coupon active 才画
+  // 用 useReady 替代 setTimeout/nextTick·确保 Canvas DOM 真挂载后再 query
   useEffect(() => {
-    if (!coupon || coupon.status !== "active") {
+    if (!pageReady || !coupon || coupon.status !== "active") {
       return;
     }
     const payload = JSON.stringify({ t: "coupon", no: coupon.couponNo, vt: coupon.verifyToken });
 
-    (async () => {
-      await Taro.nextTick();
-      Taro.createSelectorQuery()
-        .select("#coupon-qr-canvas")
-        .fields({ node: true, size: true })
-        .exec((res) => {
-          const canvas = res?.[0]?.node;
-          if (!canvas) {
-            console.warn("[coupon-qr] canvas node not ready", res);
-            return;
-          }
-          const cssWidth = res[0].width || 200;
-          const cssHeight = res[0].height || 200;
+    Taro.createSelectorQuery()
+      .select("#coupon-qr-canvas")
+      .fields({ node: true, size: true })
+      .exec((res) => {
+        const canvas = res?.[0]?.node;
+        if (!canvas) {
+          console.warn("[coupon-qr] canvas node not ready", res);
+          return;
+        }
+        const cssWidth = res[0].width || 200;
+        const cssHeight = res[0].height || 200;
 
-          const qr = qrcode(0, "M");
-          qr.addData(payload);
-          qr.make();
-          const moduleCount = qr.getModuleCount();
+        const qr = qrcode(0, "M");
+        qr.addData(payload);
+        qr.make();
+        const moduleCount = qr.getModuleCount();
 
-          const dpr = Taro.getSystemInfoSync().pixelRatio || 2;
-          canvas.width = Math.round(cssWidth * dpr);
-          canvas.height = Math.round(cssHeight * dpr);
+        let dpr = 2;
+        try {
+          dpr = Taro.getWindowInfo().pixelRatio || 2;
+        } catch {}
 
-          const ctx = canvas.getContext("2d");
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          ctx.clearRect(0, 0, cssWidth, cssHeight);
-          ctx.fillStyle = "#FBF7F1";
-          ctx.fillRect(0, 0, cssWidth, cssHeight);
-          ctx.fillStyle = "#3C2218";
+        canvas.width = Math.round(cssWidth * dpr);
+        canvas.height = Math.round(cssHeight * dpr);
 
-          const cell = cssWidth / moduleCount;
-          for (let r = 0; r < moduleCount; r++) {
-            for (let c = 0; c < moduleCount; c++) {
-              if (qr.isDark(r, c)) {
-                ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
-              }
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = "#FBF7F1";
+        ctx.fillRect(0, 0, cssWidth, cssHeight);
+        ctx.fillStyle = "#3C2218";
+
+        const cell = cssWidth / moduleCount;
+        for (let r = 0; r < moduleCount; r++) {
+          for (let c = 0; c < moduleCount; c++) {
+            if (qr.isDark(r, c)) {
+              ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
             }
           }
-        });
-    })();
-  }, [coupon]);
+        }
+      });
+  }, [pageReady, coupon]);
 
   useLoad(async (options) => {
     const id = options?.couponId;
