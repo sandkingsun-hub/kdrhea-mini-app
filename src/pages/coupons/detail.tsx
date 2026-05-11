@@ -61,10 +61,11 @@ export default function CouponDetail() {
   };
 
   // 用微信 Canvas 2D 新 API（type="2d" + selectorQuery + getContext('2d')）
-  // 老的 createCanvasContext 在新版基础库 silently 不渲染
+  // 必须 .in(page) 限定到当前页面·否则全局 selector 找不到节点
   const drawQr = (payload: string) => {
     setTimeout(() => {
-      const query = Taro.createSelectorQuery();
+      const page = Taro.getCurrentInstance().page as unknown as Record<string, unknown>;
+      const query = Taro.createSelectorQuery().in(page);
       query.select("#coupon-qr")
         .fields({ node: true, size: true })
         .exec((res) => {
