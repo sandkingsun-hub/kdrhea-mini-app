@@ -82,8 +82,9 @@ export default function CouponDetail() {
         ? wx.createSelectorQuery()
         : Taro.createSelectorQuery();
 
+      // 用类名选择器·Taro 4 会把 id 改写成内部 sid·className 保留
       query
-        .select("#coupon-qr-canvas")
+        .select(".coupon-qr-canvas")
         .fields({ node: true, size: true })
         .exec((res: any[]) => {
           const canvas = res?.[0]?.node;
@@ -270,7 +271,7 @@ export default function CouponDetail() {
                 position: isUsable ? "relative" : "absolute",
               }}
             >
-              <Canvas type="2d" id="coupon-qr-canvas" style={{ width: "200px", height: "200px" }} />
+              <Canvas type="2d" className="coupon-qr-canvas" style={{ width: "200px", height: "200px" }} />
             </View>
             {isUsable && (
               <Text className="mt-3 block" style={{ fontSize: "11px", color: "#864D39" }}>
