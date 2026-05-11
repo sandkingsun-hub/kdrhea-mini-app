@@ -2,7 +2,7 @@
 // 二维码内容 = JSON {t:'coupon', no, vt}·员工 scanner 扫到后调 redeemCoupon
 import { Image, Text, View } from "@tarojs/components";
 import { useLoad } from "@tarojs/taro";
-import QRCode from "qrcode";
+import qrcode from "qrcode-generator";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
@@ -60,15 +60,14 @@ export default function CouponDetail() {
     }
   };
 
-  // qrcode 包 · 自定义颜色（KDRHEA 深棕 + 米白）
-  // Image 组件显示 dataURL·Taro 4 + 当前微信基础库 <Canvas> 不渲染 DOM 的兜底
-  const generateQrDataUrl = (payload: string): Promise<string> => {
-    return QRCode.toDataURL(payload, {
-      color: { dark: "#3C2218", light: "#FBF7F1" },
-      margin: 1,
-      errorCorrectionLevel: "M",
-      width: 400,
-    });
+  // qrcode-generator · 纯 JS·能在小程序 worker 跑
+  // qrcode npm 包用 node-canvas/DOM·小程序环境跑不了
+  // 颜色定制不支持·只能黑白·QR 黑白识别率最高·靠容器装饰美化
+  const generateQrDataUrl = (payload: string): string => {
+    const qr = qrcode(0, "M");
+    qr.addData(payload);
+    qr.make();
+    return qr.createDataURL(6, 0);
   };
 
   useLoad(async (options) => {
@@ -83,8 +82,7 @@ export default function CouponDetail() {
       if (r.coupon.status === "active") {
         const payload = JSON.stringify({ t: "coupon", no: r.coupon.couponNo, vt: r.coupon.verifyToken });
         try {
-          const url = await generateQrDataUrl(payload);
-          setQrDataUrl(url);
+          setQrDataUrl(generateQrDataUrl(payload));
         } catch (e) {
           console.warn("[coupon-qr] generate failed:", e);
         }
