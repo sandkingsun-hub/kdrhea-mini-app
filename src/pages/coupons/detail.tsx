@@ -60,8 +60,9 @@ export default function CouponDetail() {
     }
   };
 
-  const drawQr = (payload: string) => {
-    setTimeout(() => {
+  // 重试 3 次·间隔 150ms·应对 Canvas mount 时序漂移
+  const drawQrOnce = (payload: string) => {
+    try {
       const qr = qrcode(0, "M");
       qr.addData(payload);
       qr.make();
@@ -73,7 +74,6 @@ export default function CouponDetail() {
 
       ctx.setFillStyle("#FBF7F1");
       ctx.fillRect(0, 0, size, size);
-
       ctx.setFillStyle("#3C2218");
       for (let r = 0; r < moduleCount; r++) {
         for (let c = 0; c < moduleCount; c++) {
@@ -83,7 +83,20 @@ export default function CouponDetail() {
         }
       }
       ctx.draw();
-    }, 200);
+      return true;
+    } catch (e) {
+      console.warn("[coupon-qr] draw failed:", e);
+      return false;
+    }
+  };
+
+  const drawQr = (payload: string) => {
+    // 第 1 次：next tick（Canvas 刚 commit）
+    setTimeout(() => {
+      drawQrOnce(payload);
+      // 第 2 次：300ms·防个别真机首次 ctx 失败
+      setTimeout(drawQrOnce, 300, payload);
+    }, 50);
   };
 
   useLoad(async (options) => {
