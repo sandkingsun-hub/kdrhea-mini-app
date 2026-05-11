@@ -52,11 +52,10 @@ export default function CouponDetail() {
 
   const callCloud = async (n: string, d?: any): Promise<any> => {
     try {
-      // @ts-expect-error wx 由微信运行时注入
       if (typeof wx === "undefined" || !wx.cloud) {
         return null;
       }
-      // @ts-expect-error wx.cloud.callFunction 由微信注入
+
       const r = await wx.cloud.callFunction({ name: n, data: d });
       return r.result;
     } catch {
