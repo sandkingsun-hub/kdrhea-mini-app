@@ -36,6 +36,7 @@ const SOURCE_LABEL: Record<string, string> = {
   push: "活动赠送",
   promotion: "促销活动",
   old_customer_activation: "老客感恩",
+  invitation_gift: "新人首礼",
 };
 
 function shortDate(iso: string) {

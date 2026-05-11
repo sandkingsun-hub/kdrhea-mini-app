@@ -78,17 +78,7 @@ export default function Profile() {
     load();
   });
 
-  const handleInvite = async () => {
-    const r = await callCloud("generateReferralLink", { channel: "direct_share" });
-    if (!r?.ok) {
-      Taro.showToast({ title: "生成失败", icon: "none" });
-      return;
-    }
-    Taro.setClipboardData({
-      data: `KDRHEA · 我的邀请码 ${r.shortCode}`,
-      success: () => Taro.showToast({ title: "邀请码已复制", icon: "success" }),
-    });
-  };
+  const handleInvite = () => Taro.navigateTo({ url: "/pages/share/index" });
 
   const goEdit = () => Taro.navigateTo({ url: "/pages/account/edit" });
   const goRecords = (tab?: string) =>

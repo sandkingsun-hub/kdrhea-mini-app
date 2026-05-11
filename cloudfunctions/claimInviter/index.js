@@ -1,12 +1,12 @@
 // claimInviter · 新用户首登绑定 inviter 关系
-// 入参：{ shortCode }
-// 出参：{ ok, inviterOpenid, alreadyBound }
+// 入参：{ shortCode } 或 { inviter, channel }（两种模式兼容）
+// 出参：{ ok, inviterOpenid, alreadyBound, inviterChannel }
 //
 // 业务规则：
 // - 调用者必须是新用户（user.inviterId 当前为 null）·已有 inviter 不允许覆盖
-// - shortCode 必须存在
-// - 不允许自己邀请自己（防自刷）
-// - referral_links.hits +1（不管是否真转化·只要扫码就计点击）
+// - firstPaidAt 已设拒绝补绑·防刷
+// - 不允许自己邀请自己
+// - referral_links.hits +1（两种模式都尝试累加）
 const cloud = require('wx-server-sdk');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -16,30 +16,50 @@ const _ = db.command;
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext();
   const inviteeOpenid = wxContext.OPENID;
-  const { shortCode } = event;
+  const { shortCode, inviter, channel } = event;
 
   if (!inviteeOpenid) return { ok: false, code: 'NO_OPENID' };
-  if (!shortCode || typeof shortCode !== 'string') {
-    return { ok: false, code: 'MISSING_SHORTCODE' };
-  }
 
-  // 1. 查 referral_links
-  const linkQuery = await db
-    .collection('referral_links')
-    .where({ shortCode })
-    .limit(1)
-    .get();
-  if (linkQuery.data.length === 0) {
-    return { ok: false, code: 'INVALID_SHORTCODE' };
+  // 1. 解析 inviter openid + channel（两种模式）
+  let inviterOpenid;
+  let inviterChannel;
+  let linkDoc = null;
+
+  if (inviter && channel) {
+    // 模式 A · 分享落地页直传 openid + channel
+    inviterOpenid = inviter;
+    inviterChannel = channel;
+  } else if (shortCode && typeof shortCode === 'string') {
+    // 模式 B · 短码反查 referral_links
+    const linkQuery = await db
+      .collection('referral_links')
+      .where({ shortCode })
+      .limit(1)
+      .get();
+    if (linkQuery.data.length === 0) {
+      return { ok: false, code: 'INVALID_SHORTCODE' };
+    }
+    linkDoc = linkQuery.data[0];
+    inviterOpenid = linkDoc.inviterOpenid;
+    inviterChannel = linkDoc.channel;
+  } else {
+    return { ok: false, code: 'MISSING_INVITER_REF' };
   }
-  const link = linkQuery.data[0];
-  const inviterOpenid = link.inviterOpenid;
 
   if (inviterOpenid === inviteeOpenid) {
     return { ok: false, code: 'SELF_INVITE' };
   }
 
-  // 2. 查当前用户档案
+  // 2. 模式 A 下校验 inviter 是真实用户·防恶意构造 URL
+  if (!linkDoc) {
+    const inviterUser = await db.collection('users')
+      .where({ _openid: inviterOpenid }).limit(1).get();
+    if (inviterUser.data.length === 0) {
+      return { ok: false, code: 'INVITER_NOT_FOUND' };
+    }
+  }
+
+  // 3. 查当前用户档案
   const userQuery = await db
     .collection('users')
     .where({ _openid: inviteeOpenid })
@@ -57,7 +77,6 @@ exports.main = async (event) => {
     };
   }
   if (user.inviterId) {
-    // 已绑定 · 不覆盖
     return {
       ok: true,
       alreadyBound: true,
@@ -66,24 +85,36 @@ exports.main = async (event) => {
     };
   }
 
-  // 3. 写入 user.inviterId + inviterChannel
+  // 4. 写入 user.inviterId + inviterChannel
   await db.collection('users').doc(user._id).update({
     data: {
       inviterId: inviterOpenid,
-      inviterChannel: link.channel,
+      inviterChannel,
       lastActiveAt: new Date().toISOString(),
     },
   });
 
-  // 4. referral_links.hits +1
-  await db.collection('referral_links').doc(link._id).update({
-    data: { hits: _.inc(1) },
-  });
+  // 5. referral_links.hits +1
+  if (linkDoc) {
+    await db.collection('referral_links').doc(linkDoc._id).update({
+      data: { hits: _.inc(1) },
+    });
+  } else {
+    // 模式 A 也尝试找对应 link 累加 hits·没有就不动
+    const q = await db.collection('referral_links')
+      .where({ inviterOpenid, channel: inviterChannel })
+      .limit(1).get();
+    if (q.data.length > 0) {
+      await db.collection('referral_links').doc(q.data[0]._id).update({
+        data: { hits: _.inc(1) },
+      });
+    }
+  }
 
   return {
     ok: true,
     alreadyBound: false,
     inviterOpenid,
-    inviterChannel: link.channel,
+    inviterChannel,
   };
 };
