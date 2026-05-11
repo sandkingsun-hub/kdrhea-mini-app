@@ -1,7 +1,7 @@
 // 券详情 · 二维码核销
 // 二维码内容 = JSON {t:'coupon', no, vt}·员工 scanner 扫到后调 redeemCoupon
-import { Canvas, Text, View } from "@tarojs/components";
-import Taro, { useLoad } from "@tarojs/taro";
+import { Image, Text, View } from "@tarojs/components";
+import { useLoad } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -45,6 +45,7 @@ function shortDate(iso: string) {
 export default function CouponDetail() {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
 
   const callCloud = async (n: string, d?: any): Promise<any> => {
     try {
@@ -59,33 +60,15 @@ export default function CouponDetail() {
     }
   };
 
-  // 完全 mirror qrcode/index.tsx（确认 work 的写法）
-  // 用老 API createCanvasContext·useLoad 内 setState 后立即 setTimeout drawQr
-  // 新 API <Canvas type="2d"> 在 Taro 4 + 当前微信基础库下根本不渲染到 DOM
-  const drawQr = (payload: string) => {
-    setTimeout(() => {
-      const qr = qrcode(0, "M");
-      qr.addData(payload);
-      qr.make();
-      const moduleCount = qr.getModuleCount();
-
-      const ctx = Taro.createCanvasContext("coupon-qr");
-      const size = 200;
-      const cell = size / moduleCount;
-
-      ctx.setFillStyle("#FBF7F1");
-      ctx.fillRect(0, 0, size, size);
-      ctx.setFillStyle("#3C2218");
-      for (let r = 0; r < moduleCount; r++) {
-        for (let c = 0; c < moduleCount; c++) {
-          if (qr.isDark(r, c)) {
-            ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
-          }
-        }
-      }
-      ctx.draw();
-      console.log("[coupon-qr] draw OK·moduleCount=", moduleCount);
-    }, 300);
+  // 用 qrcode-generator 的 createDataURL 直接生成 base64 PNG·Image 组件显示
+  // Taro 4 + 当前微信基础库下 <Canvas> 不渲染 DOM·彻底放弃 Canvas 方案
+  const generateQrDataUrl = (payload: string): string => {
+    const qr = qrcode(0, "M");
+    qr.addData(payload);
+    qr.make();
+    // createDataURL(cellSize=6, margin=0) → 生成 dataURL
+    // moduleCount × cellSize = 大致 200px·cellSize=6 在 moduleCount~33 时 198px
+    return qr.createDataURL(6, 0);
   };
 
   useLoad(async (options) => {
@@ -99,7 +82,13 @@ export default function CouponDetail() {
       setCoupon(r.coupon);
       if (r.coupon.status === "active") {
         const payload = JSON.stringify({ t: "coupon", no: r.coupon.couponNo, vt: r.coupon.verifyToken });
-        drawQr(payload);
+        try {
+          const url = generateQrDataUrl(payload);
+          setQrDataUrl(url);
+          console.log("[coupon-qr] dataUrl generated·length=", url.length);
+        } catch (e) {
+          console.warn("[coupon-qr] generate failed:", e);
+        }
       }
     } else {
       setLoadFailed(true);
@@ -224,7 +213,9 @@ export default function CouponDetail() {
                 position: "relative",
               }}
             >
-              <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
+              {qrDataUrl && (
+                <Image src={qrDataUrl} style={{ width: "200px", height: "200px", display: "block" }} />
+              )}
               {!isUsable && (
                 <View
                   className="flex-center"
