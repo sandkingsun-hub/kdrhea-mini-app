@@ -1,9 +1,9 @@
 // 券详情 · 二维码核销
 // 二维码内容 = JSON {t:'coupon', no, vt}·员工 scanner 扫到后调 redeemCoupon
 import { Canvas, Text, View } from "@tarojs/components";
-import Taro, { useLoad } from "@tarojs/taro";
+import Taro, { useLoad, useReady } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
 interface Coupon {
@@ -45,6 +45,10 @@ function shortDate(iso: string) {
 export default function CouponDetail() {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
+
+  // page onReady·Canvas DOM 已挂载
+  useReady(() => setPageReady(true));
 
   const callCloud = async (n: string, d?: any): Promise<any> => {
     try {
@@ -60,48 +64,48 @@ export default function CouponDetail() {
     }
   };
 
-  // 用微信 Canvas 2D 新 API（type="2d" + selectorQuery + getContext('2d')）
-  // 必须 .in(page) 限定到当前页面·否则全局 selector 找不到节点
-  const drawQr = (payload: string) => {
-    setTimeout(() => {
-      const page = Taro.getCurrentInstance().page as unknown as Record<string, unknown>;
-      const query = Taro.createSelectorQuery().in(page);
-      query.select("#coupon-qr")
-        .fields({ node: true, size: true })
-        .exec((res) => {
-          if (!res?.[0]?.node) {
-            console.warn("[coupon-qr] canvas node not found", res);
-            return;
-          }
-          const canvas = res[0].node;
-          const ctx = canvas.getContext("2d");
+  // Canvas 2D 新 API：page ready + coupon 都到位时画 QR
+  // 不用 setTimeout 猜时机·两个条件都满足才执行 → 一定可靠
+  useEffect(() => {
+    if (!pageReady || !coupon || coupon.status !== "active") {
+      return;
+    }
+    const payload = JSON.stringify({ t: "coupon", no: coupon.couponNo, vt: coupon.verifyToken });
+    Taro.createSelectorQuery()
+      .select("#coupon-qr")
+      .node()
+      .exec((res) => {
+        if (!res?.[0]?.node) {
+          console.warn("[coupon-qr] canvas node not found", res);
+          return;
+        }
+        const canvas = res[0].node;
+        const ctx = canvas.getContext("2d");
 
-          const qr = qrcode(0, "M");
-          qr.addData(payload);
-          qr.make();
-          const moduleCount = qr.getModuleCount();
+        const qr = qrcode(0, "M");
+        qr.addData(payload);
+        qr.make();
+        const moduleCount = qr.getModuleCount();
 
-          const size = 200;
-          // @ts-expect-error wx 由微信注入
-          const dpr = (typeof wx !== "undefined" && wx.getWindowInfo) ? wx.getWindowInfo().pixelRatio : 2;
-          canvas.width = size * dpr;
-          canvas.height = size * dpr;
-          ctx.scale(dpr, dpr);
+        const size = 200;
+        const dpr = Taro.getWindowInfo?.()?.pixelRatio ?? 2;
+        canvas.width = size * dpr;
+        canvas.height = size * dpr;
+        ctx.scale(dpr, dpr);
 
-          const cell = size / moduleCount;
-          ctx.fillStyle = "#FBF7F1";
-          ctx.fillRect(0, 0, size, size);
-          ctx.fillStyle = "#3C2218";
-          for (let r = 0; r < moduleCount; r++) {
-            for (let c = 0; c < moduleCount; c++) {
-              if (qr.isDark(r, c)) {
-                ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
-              }
+        const cell = size / moduleCount;
+        ctx.fillStyle = "#FBF7F1";
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = "#3C2218";
+        for (let r = 0; r < moduleCount; r++) {
+          for (let c = 0; c < moduleCount; c++) {
+            if (qr.isDark(r, c)) {
+              ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
             }
           }
-        });
-    }, 200);
-  };
+        }
+      });
+  }, [pageReady, coupon]);
 
   useLoad(async (options) => {
     const id = options?.couponId;
@@ -112,10 +116,6 @@ export default function CouponDetail() {
     const r = await callCloud("getCouponDetail", { couponId: id });
     if (r?.ok && r.coupon) {
       setCoupon(r.coupon);
-      if (r.coupon.status === "active") {
-        const payload = JSON.stringify({ t: "coupon", no: r.coupon.couponNo, vt: r.coupon.verifyToken });
-        drawQr(payload);
-      }
     } else {
       setLoadFailed(true);
     }
