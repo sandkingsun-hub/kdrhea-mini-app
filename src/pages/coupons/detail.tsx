@@ -3,7 +3,7 @@
 import { Canvas, Text, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
 interface Coupon {
@@ -90,13 +90,10 @@ export default function CouponDetail() {
     }
   };
 
+  // 完全 mirror qrcode/index.tsx 的写法：useLoad 内 await · setState · 立即 drawQr
+  // 之前的 useEffect 监听 + 双层 setTimeout 都不稳·改回最简模式
   const drawQr = (payload: string) => {
-    // 第 1 次：next tick（Canvas 刚 commit）
-    setTimeout(() => {
-      drawQrOnce(payload);
-      // 第 2 次：300ms·防个别真机首次 ctx 失败
-      setTimeout(drawQrOnce, 300, payload);
-    }, 50);
+    setTimeout(drawQrOnce, 200, payload);
   };
 
   useLoad(async (options) => {
@@ -108,20 +105,14 @@ export default function CouponDetail() {
     const r = await callCloud("getCouponDetail", { couponId: id });
     if (r?.ok && r.coupon) {
       setCoupon(r.coupon);
+      if (r.coupon.status === "active") {
+        const payload = JSON.stringify({ t: "coupon", no: r.coupon.couponNo, vt: r.coupon.verifyToken });
+        drawQr(payload);
+      }
     } else {
       setLoadFailed(true);
     }
   });
-
-  // 等 coupon state 落 + Canvas mount 后再画 QR
-  // 之前 useLoad 里直接 drawQr 会撞到 Canvas 还没 render·setTimeout 也不稳
-  useEffect(() => {
-    if (!coupon || coupon.status !== "active") {
-      return;
-    }
-    const payload = JSON.stringify({ t: "coupon", no: coupon.couponNo, vt: coupon.verifyToken });
-    drawQr(payload);
-  }, [coupon]);
 
   if (loadFailed) {
     return (
@@ -226,7 +217,7 @@ export default function CouponDetail() {
             }}
           />
 
-          {/* 二维码区 · Canvas 始终 mount（微信 Canvas 对条件渲染敏感）·用 display 控制显示 */}
+          {/* 二维码区 · Canvas 用 visibility 控制·display:none 会让 Canvas native 节点失效 */}
           <View style={{ padding: "20px 0 18px", textAlign: "center" }}>
             <View
               className="mx-auto"
@@ -238,7 +229,8 @@ export default function CouponDetail() {
                 width: "232px",
                 height: "232px",
                 boxSizing: "border-box",
-                display: isUsable ? "block" : "none",
+                visibility: isUsable ? "visible" : "hidden",
+                position: isUsable ? "relative" : "absolute",
               }}
             >
               <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
