@@ -1,9 +1,9 @@
 // 券详情 · 二维码核销
 // 二维码内容 = JSON {t:'coupon', no, vt}·员工 scanner 扫到后调 redeemCoupon
 import { Canvas, Text, View } from "@tarojs/components";
-import Taro, { useLoad, useReady } from "@tarojs/taro";
+import Taro, { useLoad } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
 interface Coupon {
@@ -45,11 +45,6 @@ function shortDate(iso: string) {
 export default function CouponDetail() {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [pageReady, setPageReady] = useState(false);
-
-  useReady(() => {
-    setPageReady(true);
-  });
 
   const callCloud = async (n: string, d?: any): Promise<any> => {
     try {
@@ -64,88 +59,34 @@ export default function CouponDetail() {
     }
   };
 
-  // Canvas 2D：用 wx 原生 selectorQuery 直接走全局上下文·绕过 Taro 包装
-  // 加重试机制·因为部分基础库版本下 query 可能需要 1-2 帧才能拿到 node
-  useEffect(() => {
-    if (!pageReady || !coupon || coupon.status !== "active") {
-      return;
-    }
-    const payload = JSON.stringify({ t: "coupon", no: coupon.couponNo, vt: coupon.verifyToken });
+  // 完全 mirror qrcode/index.tsx（确认 work 的写法）
+  // 用老 API createCanvasContext·useLoad 内 setState 后立即 setTimeout drawQr
+  // 新 API <Canvas type="2d"> 在 Taro 4 + 当前微信基础库下根本不渲染到 DOM
+  const drawQr = (payload: string) => {
+    setTimeout(() => {
+      const qr = qrcode(0, "M");
+      qr.addData(payload);
+      qr.make();
+      const moduleCount = qr.getModuleCount();
 
-    let retryCount = 0;
-    const maxRetry = 5;
+      const ctx = Taro.createCanvasContext("coupon-qr");
+      const size = 200;
+      const cell = size / moduleCount;
 
-    const tryDraw = () => {
-      // @ts-expect-error wx 全局
-      const query = typeof wx !== "undefined" && wx.createSelectorQuery
-        // @ts-expect-error wx 全局
-        ? wx.createSelectorQuery()
-        : Taro.createSelectorQuery();
-
-      // 同时 query 三种选择器 + selectAll canvas·定位到底 node 在哪
-      query
-        .selectAll("canvas")
-        .fields({ node: true, size: true })
-        .select(".coupon-qr-canvas")
-        .fields({ node: true, size: true })
-        .exec((res: any[]) => {
-          // res[0] 是 selectAll canvas（数组）·res[1] 是 .coupon-qr-canvas
-          console.log("[coupon-qr DEBUG] selectAll canvas:", res?.[0]?.length, res?.[0]);
-          console.log("[coupon-qr DEBUG] .coupon-qr-canvas:", res?.[1]);
-
-          // 优先用 className 选择·如果没有 fallback 用 selectAll 的第一个 canvas
-          const canvas = res?.[1]?.node || res?.[0]?.[0]?.node;
-          if (!canvas) {
-            retryCount++;
-            if (retryCount < maxRetry) {
-              console.warn(`[coupon-qr] node not ready·retry ${retryCount}/${maxRetry}`);
-              setTimeout(tryDraw, 300);
-            } else {
-              console.warn("[coupon-qr] node still not ready after retries", res);
-            }
-            return;
+      ctx.setFillStyle("#FBF7F1");
+      ctx.fillRect(0, 0, size, size);
+      ctx.setFillStyle("#3C2218");
+      for (let r = 0; r < moduleCount; r++) {
+        for (let c = 0; c < moduleCount; c++) {
+          if (qr.isDark(r, c)) {
+            ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
           }
-          const sizeInfo = res?.[1]?.width ? res[1] : res?.[0]?.[0];
-          const cssWidth = sizeInfo?.width || 200;
-          const cssHeight = sizeInfo?.height || 200;
-
-          const qr = qrcode(0, "M");
-          qr.addData(payload);
-          qr.make();
-          const moduleCount = qr.getModuleCount();
-
-          let dpr = 2;
-          try {
-            // @ts-expect-error wx 全局
-            dpr = (typeof wx !== "undefined" && wx.getWindowInfo)
-              // @ts-expect-error wx 全局
-              ? wx.getWindowInfo().pixelRatio
-              : 2;
-          } catch {}
-
-          canvas.width = Math.round(cssWidth * dpr);
-          canvas.height = Math.round(cssHeight * dpr);
-
-          const ctx = canvas.getContext("2d");
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          ctx.fillStyle = "#FBF7F1";
-          ctx.fillRect(0, 0, cssWidth, cssHeight);
-          ctx.fillStyle = "#3C2218";
-
-          const cell = cssWidth / moduleCount;
-          for (let r = 0; r < moduleCount; r++) {
-            for (let c = 0; c < moduleCount; c++) {
-              if (qr.isDark(r, c)) {
-                ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
-              }
-            }
-          }
-          console.log("[coupon-qr] draw OK·moduleCount=", moduleCount);
-        });
-    };
-
-    tryDraw();
-  }, [pageReady, coupon]);
+        }
+      }
+      ctx.draw();
+      console.log("[coupon-qr] draw OK·moduleCount=", moduleCount);
+    }, 300);
+  };
 
   useLoad(async (options) => {
     const id = options?.couponId;
@@ -156,6 +97,10 @@ export default function CouponDetail() {
     const r = await callCloud("getCouponDetail", { couponId: id });
     if (r?.ok && r.coupon) {
       setCoupon(r.coupon);
+      if (r.coupon.status === "active") {
+        const payload = JSON.stringify({ t: "coupon", no: r.coupon.couponNo, vt: r.coupon.verifyToken });
+        drawQr(payload);
+      }
     } else {
       setLoadFailed(true);
     }
@@ -279,7 +224,7 @@ export default function CouponDetail() {
                 position: isUsable ? "relative" : "absolute",
               }}
             >
-              <Canvas type="2d" className="coupon-qr-canvas" style={{ width: "200px", height: "200px" }} />
+              <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
             </View>
             {isUsable && (
               <Text className="mt-3 block" style={{ fontSize: "11px", color: "#864D39" }}>
