@@ -209,7 +209,8 @@ export default function CouponDetail() {
             }}
           />
 
-          {/* 二维码区 · 删 boxSizing·让 Canvas 200x200 有完整渲染空间 */}
+          {/* 二维码区 · Canvas 永远在 normal flow·避免 visibility/position 切换让渲染层 skip
+              非 active 时用 absolute overlay 盖在 Canvas 上方·而不是隐藏 Canvas */}
           <View style={{ padding: "20px 0 18px", textAlign: "center" }}>
             <View
               className="mx-auto"
@@ -220,31 +221,29 @@ export default function CouponDetail() {
                 padding: "16px",
                 width: "232px",
                 height: "232px",
-                visibility: isUsable ? "visible" : "hidden",
-                position: isUsable ? "relative" : "absolute",
+                position: "relative",
               }}
             >
               <Canvas canvasId="coupon-qr" style={{ width: "200px", height: "200px" }} />
+              {!isUsable && (
+                <View
+                  className="flex-center"
+                  style={{
+                    position: "absolute",
+                    inset: "16px",
+                    background: "#FBF7F1",
+                  }}
+                >
+                  <Text style={{ fontFamily: "var(--kd-font-display)", fontSize: "16px", color: "#937761", letterSpacing: "0.18em" }}>
+                    {coupon.status === "used" ? "已 核 销" : "已 过 期"}
+                  </Text>
+                </View>
+              )}
             </View>
             {isUsable && (
               <Text className="mt-3 block" style={{ fontSize: "11px", color: "#864D39" }}>
                 请向前台出示
               </Text>
-            )}
-            {!isUsable && (
-              <View
-                className="mx-auto flex-center"
-                style={{
-                  width: "200px",
-                  height: "60px",
-                  border: "1px solid #DCC9B6",
-                  borderRadius: "12px",
-                }}
-              >
-                <Text style={{ fontFamily: "var(--kd-font-display)", fontSize: "16px", color: "#937761", letterSpacing: "0.18em" }}>
-                  {coupon.status === "used" ? "已 核 销" : "已 过 期"}
-                </Text>
-              </View>
             )}
           </View>
 
