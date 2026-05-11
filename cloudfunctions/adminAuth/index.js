@@ -29,8 +29,45 @@ const SECRET = process.env.ADMIN_AUTH_SECRET || "kd-admin-dev-secret-change-me";
 const CODE_TTL_MS = 5 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-// 当前 dev 模式·返回 code 让前端能拿到·上线前改 false 或删 devCode 字段
-const DEV_RETURN_CODE = true;
+
+// 腾讯云 SMS 配置（云函数环境变量·配齐后自动切真发·缺则 dev 模式）
+const SMS_SDK_APP_ID = process.env.TENCENT_SMS_SDK_APP_ID || "";
+const SMS_SIGN_NAME = process.env.TENCENT_SMS_SIGN_NAME || "";
+const SMS_TEMPLATE_ID = process.env.TENCENT_SMS_TEMPLATE_ID || "";
+const SMS_SECRET_ID = process.env.TENCENT_SECRET_ID || "";
+const SMS_SECRET_KEY = process.env.TENCENT_SECRET_KEY || "";
+const SMS_REGION = process.env.TENCENT_SMS_REGION || "ap-shanghai";
+
+const SMS_CONFIGURED = !!(SMS_SDK_APP_ID && SMS_SIGN_NAME && SMS_TEMPLATE_ID && SMS_SECRET_ID && SMS_SECRET_KEY);
+
+// SMS 没配齐时·dev 模式：把 code 直接在响应里返回让前端弹出
+// 配齐后：发真短信·不再返 devCode
+const DEV_RETURN_CODE = !SMS_CONFIGURED;
+
+async function sendRealSms(phone, code) {
+  // 动态 require·避免没装包时模块加载失败
+  const tencentcloud = require("tencentcloud-sdk-nodejs-sms");
+  const SmsClient = tencentcloud.sms.v20210111.Client;
+
+  const client = new SmsClient({
+    credential: { secretId: SMS_SECRET_ID, secretKey: SMS_SECRET_KEY },
+    region: SMS_REGION,
+    profile: { httpProfile: { endpoint: "sms.tencentcloudapi.com" } },
+  });
+
+  const params = {
+    SmsSdkAppId: SMS_SDK_APP_ID,
+    SignName: SMS_SIGN_NAME,
+    TemplateId: SMS_TEMPLATE_ID,
+    TemplateParamSet: [code, String(CODE_TTL_MS / 60000)], // [验证码, 有效分钟数]
+    PhoneNumberSet: [`+86${phone}`],
+  };
+  const r = await client.SendSms(params);
+  if (r.SendStatusSet?.[0]?.Code !== "Ok") {
+    throw new Error(`SMS_FAIL: ${JSON.stringify(r.SendStatusSet?.[0])}`);
+  }
+  return r;
+}
 
 function sha256(s) {
   return crypto.createHash("sha256").update(s).digest("hex");
@@ -129,12 +166,18 @@ exports.main = async (event = {}) => {
       },
     });
 
-    // TODO 上线前接腾讯云 SMS：
-    // const tencentcloud = require("tencentcloud-sdk-nodejs");
-    // const SmsClient = tencentcloud.sms.v20210111.Client;
-    // const client = new SmsClient({ ... });
-    // await client.SendSms({ PhoneNumberSet: ["+86" + phone], TemplateId, TemplateParamSet: [verifyCode], ... });
-    console.log(`[adminAuth dev] code for ${phone}: ${verifyCode}`);
+    // 配齐 SMS 环境变量则真发·否则 dev 模式
+    if (SMS_CONFIGURED) {
+      try {
+        await sendRealSms(phone, verifyCode);
+        console.log(`[adminAuth] SMS sent to ${phone}`);
+      } catch (e) {
+        console.error(`[adminAuth] SMS failed for ${phone}:`, e);
+        return { ok: false, code: "SMS_SEND_FAILED", error: String(e).slice(0, 100) };
+      }
+    } else {
+      console.log(`[adminAuth dev] code for ${phone}: ${verifyCode}`);
+    }
 
     const ret = { ok: true, expiresInSec: CODE_TTL_MS / 1000 };
     if (DEV_RETURN_CODE) {

@@ -1,7 +1,10 @@
 {
   "name": "adminAuth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "管理员后台登录·SMS 验证码 + HMAC token",
   "main": "index.js",
-  "dependencies": { "wx-server-sdk": "latest" }
+  "dependencies": {
+    "wx-server-sdk": "latest",
+    "tencentcloud-sdk-nodejs-sms": "^4.0.0"
+  }
 }
