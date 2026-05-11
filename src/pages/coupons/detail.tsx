@@ -217,7 +217,7 @@ export default function CouponDetail() {
             }}
           />
 
-          {/* 二维码区 · Canvas 用 visibility 控制·display:none 会让 Canvas native 节点失效 */}
+          {/* 二维码区 · 删 boxSizing·让 Canvas 200x200 有完整渲染空间 */}
           <View style={{ padding: "20px 0 18px", textAlign: "center" }}>
             <View
               className="mx-auto"
@@ -228,7 +228,6 @@ export default function CouponDetail() {
                 padding: "16px",
                 width: "232px",
                 height: "232px",
-                boxSizing: "border-box",
                 visibility: isUsable ? "visible" : "hidden",
                 position: isUsable ? "relative" : "absolute",
               }}
