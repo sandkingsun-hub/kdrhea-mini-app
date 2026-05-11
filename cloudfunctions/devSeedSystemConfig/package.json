@@ -1,0 +1,7 @@
+{
+  "name": "devSeedSystemConfig",
+  "version": "0.1.0",
+  "description": "[DEV] 初始化 system_config 默认配置",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "latest" }
+}
