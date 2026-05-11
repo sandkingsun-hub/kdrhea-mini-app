@@ -82,24 +82,32 @@ export default function CouponDetail() {
         ? wx.createSelectorQuery()
         : Taro.createSelectorQuery();
 
-      // 用类名选择器·Taro 4 会把 id 改写成内部 sid·className 保留
+      // 同时 query 三种选择器 + selectAll canvas·定位到底 node 在哪
       query
+        .selectAll("canvas")
+        .fields({ node: true, size: true })
         .select(".coupon-qr-canvas")
         .fields({ node: true, size: true })
         .exec((res: any[]) => {
-          const canvas = res?.[0]?.node;
+          // res[0] 是 selectAll canvas（数组）·res[1] 是 .coupon-qr-canvas
+          console.log("[coupon-qr DEBUG] selectAll canvas:", res?.[0]?.length, res?.[0]);
+          console.log("[coupon-qr DEBUG] .coupon-qr-canvas:", res?.[1]);
+
+          // 优先用 className 选择·如果没有 fallback 用 selectAll 的第一个 canvas
+          const canvas = res?.[1]?.node || res?.[0]?.[0]?.node;
           if (!canvas) {
             retryCount++;
             if (retryCount < maxRetry) {
               console.warn(`[coupon-qr] node not ready·retry ${retryCount}/${maxRetry}`);
-              setTimeout(tryDraw, 150);
+              setTimeout(tryDraw, 300);
             } else {
               console.warn("[coupon-qr] node still not ready after retries", res);
             }
             return;
           }
-          const cssWidth = res[0].width || 200;
-          const cssHeight = res[0].height || 200;
+          const sizeInfo = res?.[1]?.width ? res[1] : res?.[0]?.[0];
+          const cssWidth = sizeInfo?.width || 200;
+          const cssHeight = sizeInfo?.height || 200;
 
           const qr = qrcode(0, "M");
           qr.addData(payload);
