@@ -14,6 +14,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 
 const SELF_RATE = 0.02; // 线下消费返 2%
+const REFERRAL_RATE = 0.05; // 首单推荐返 5%
 
 async function getMyRole(openid) {
   const q = await db.collection('users').where({ _openid: openid }).limit(1).get();
@@ -42,6 +43,7 @@ exports.main = async (event = {}) => {
   const cust = await db.collection('users').where({ _openid: customerOpenid }).limit(1).get();
   if (cust.data.length === 0)
     return { ok: false, code: 'CUSTOMER_NOT_FOUND' };
+  const customerDoc = cust.data[0];
 
   if (action === 'log_offline_consume') {
     if (!Number.isInteger(amountFen) || amountFen <= 0)
@@ -60,6 +62,52 @@ exports.main = async (event = {}) => {
         description: description || `线下消费 ¥${(amountFen / 100).toFixed(2)} 返 2%`,
       },
     });
+
+    // 检查是否首次现金交易 + 是否有 inviter
+    if (!customerDoc.firstPaidAt && customerDoc.inviterId) {
+      const referralPoints = Math.floor(amountFen * REFERRAL_RATE);
+      if (referralPoints > 0) {
+        await cloud.callFunction({
+          name: 'earnPoints',
+          data: {
+            targetOpenid: customerDoc.inviterId,
+            delta: referralPoints,
+            type: 'earn_referral',
+            refType: 'offline_scan',
+            refId: callerOpenid,
+            description: `朋友 ${customerOpenid.slice(0, 8)} 首次线下消费 ¥${(amountFen / 100).toFixed(2)} · 推荐返 5%`,
+            pendingDays: 7,
+          },
+        });
+
+        // 同步 referral_links 累加（仅当 inviterChannel 有时）
+        if (customerDoc.inviterChannel) {
+          const linkQuery = await db.collection('referral_links')
+            .where({ inviterOpenid: customerDoc.inviterId, channel: customerDoc.inviterChannel })
+            .limit(1)
+            .get();
+          if (linkQuery.data.length > 0) {
+            await db.collection('referral_links').doc(linkQuery.data[0]._id).update({
+              data: {
+                conversions: db.command.inc(1),
+                totalGmvFromConversion: db.command.inc(amountFen),
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // 始终标记首单（即使没 inviter 或推荐积分=0）
+    if (!customerDoc.firstPaidAt) {
+      await db.collection('users').doc(customerDoc._id).update({
+        data: {
+          firstPaidAt: new Date().toISOString(),
+          firstPaidChannel: 'offline',
+        },
+      });
+    }
+
     return {
       ok: r.result?.ok || false,
       action,

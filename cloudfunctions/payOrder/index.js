@@ -86,26 +86,12 @@ exports.main = async (event = {}) => {
     }
   }
 
-  // 4. 改订单 status=paid · 标记是否首单
-  const paidCount = (await db
-    .collection('orders')
-    .where({ _openid: openid, status: 'paid' })
-    .count()).total;
-  const isFirstOrder = paidCount === 0;
-
-  // 拉用户的 inviterId
+  // 4. 查用户资料 · 首单改用 users.firstPaidAt 判定
   const userQ = await db.collection('users').where({ _openid: openid }).limit(1).get();
-  const inviterOpenid = userQ.data[0]?.inviterId || null;
-
+  const userDoc = userQ.data[0] || null;
+  const isFirstOrder = !userDoc?.firstPaidAt;
+  const inviterOpenid = userDoc?.inviterId || null;
   const now = new Date().toISOString();
-  await db.collection('orders').doc(orderId).update({
-    data: {
-      status: 'paid',
-      paidAt: now,
-      isFirstOrder,
-      inviterOpenid,
-    },
-  });
 
   // 5. 自消费返 2%（按现金部分计算 · 不算积分抵扣那部分）
   let selfRebateEarned = 0;
@@ -148,10 +134,10 @@ exports.main = async (event = {}) => {
       referralRewarded = !!(r.result && r.result.ok);
 
       // 同步 referral_links 累计
-      if (referralRewarded && userQ.data[0].inviterChannel) {
+      if (referralRewarded && userDoc?.inviterChannel) {
         const linkQuery = await db
           .collection('referral_links')
-          .where({ inviterOpenid, channel: userQ.data[0].inviterChannel })
+          .where({ inviterOpenid, channel: userDoc.inviterChannel })
           .limit(1)
           .get();
         if (linkQuery.data.length > 0) {
@@ -163,8 +149,41 @@ exports.main = async (event = {}) => {
           });
         }
       }
+
+      // 首次现金交易打点（仅首次+现金单）
+      if (referralRewarded && userDoc && !userDoc.firstPaidAt) {
+        await db.collection('users').doc(userDoc._id).update({
+          data: {
+            firstPaidAt: now,
+            firstPaidChannel: 'online',
+          },
+        });
+      }
     }
   }
+
+  // 首次现金交易打点（无 inviter / 推荐积分=0 也要落）
+  if (isFirstOrder && order.cashAmountFen > 0 && userDoc && !userDoc.firstPaidAt && !referralRewarded) {
+    await db.collection('users').doc(userDoc._id).update({
+      data: {
+        firstPaidAt: now,
+        firstPaidChannel: 'online',
+      },
+    });
+  }
+
+  // 6. 改订单 status=paid · 持久化返利结果（便于退款回滚）
+  await db.collection('orders').doc(orderId).update({
+    data: {
+      status: 'paid',
+      paidAt: now,
+      isFirstOrder,
+      inviterOpenid,
+      selfRebateEarned,
+      referralRewarded,
+      rewardPoints,
+    },
+  });
 
   // 7. 自动入袋：含 experience_voucher / physical_gift 类型的 SKU 发对应券
   // 礼遇兑换走这条路径

@@ -46,17 +46,44 @@ exports.main = async (event = {}) => {
   let settled = 0;
   let skipped = 0;
   let totalPoints = 0;
+  const logsToSettle = [];
 
-  // 2. 按用户聚合·一次性更新账户·避免大量小操作
-  const byOpenid = new Map();
+  // 2. 先剔除已退款订单的 pending 推荐返
   for (const log of due.data) {
+    if (log.refType === 'order' && log.refId) {
+      let order = null;
+      try {
+        order = (await db.collection('orders').doc(log.refId).get()).data;
+      } catch (e) {
+        order = null;
+      }
+
+      if (order && order.status === 'refunded') {
+        await db.collection('points_log').doc(log._id).update({
+          data: {
+            status: 'cancelled',
+            cancelledAt: now,
+            cancelReason: 'order_refunded',
+            refundedAt: order.refundedAt || now,
+          },
+        });
+        skipped += 1;
+        continue;
+      }
+    }
+    logsToSettle.push(log);
+  }
+
+  // 3. 按用户聚合·一次性更新账户·避免大量小操作
+  const byOpenid = new Map();
+  for (const log of logsToSettle) {
     if (!byOpenid.has(log._openid)) byOpenid.set(log._openid, { points: 0, logIds: [] });
     const agg = byOpenid.get(log._openid);
     agg.points += log.delta;
     agg.logIds.push(log._id);
   }
 
-  // 3. 对每个用户 · 事务更新账户 + 批量更新 logs
+  // 4. 对每个用户 · 事务更新账户 + 批量更新 logs
   for (const [openid, agg] of byOpenid.entries()) {
     const transaction = await db.startTransaction();
     try {

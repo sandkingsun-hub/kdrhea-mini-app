@@ -49,6 +49,13 @@ exports.main = async (event) => {
     return { ok: false, code: 'USER_NOT_FOUND', message: '请先 login' };
   }
   const user = userQuery.data[0];
+  if (user.firstPaidAt) {
+    return {
+      ok: false,
+      code: 'ALREADY_HAS_FIRST_TRANSACTION',
+      message: '您已完成首次消费·邀请关系不可补绑',
+    };
+  }
   if (user.inviterId) {
     // 已绑定 · 不覆盖
     return {
