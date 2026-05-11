@@ -1,7 +1,7 @@
 // 我的二维码 · 客户展示给前台员工扫
 // MVP 简化：码内容 = openid（短期 · 后期换签名 token 防伪）
-import { Canvas, Text, View } from "@tarojs/components";
-import Taro, { useLoad } from "@tarojs/taro";
+import { Image, Text, View } from "@tarojs/components";
+import { useLoad } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -21,6 +21,7 @@ function formatPoints(n: number) {
 
 export default function QrCode() {
   const [user, setUser] = useState<UserSummary | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
 
   const callCloud = async (name: string, data?: any): Promise<any> => {
     try {
@@ -36,33 +37,13 @@ export default function QrCode() {
     }
   };
 
-  // 真 QR 渲染 · 用 qrcode-generator 计算矩阵·Canvas 画块
-  const drawQr = (openid: string) => {
-    setTimeout(() => {
-      const qr = qrcode(0, "M"); // typeNumber=0 (auto)·errorCorrection=M
-      qr.addData(openid);
-      qr.make();
-      const moduleCount = qr.getModuleCount();
-
-      const ctx = Taro.createCanvasContext("qr-canvas");
-      const size = 200;
-      const cell = size / moduleCount;
-
-      // 米白底
-      ctx.setFillStyle("#FBF7F1");
-      ctx.fillRect(0, 0, size, size);
-
-      // 黑模块
-      ctx.setFillStyle("#3C2218");
-      for (let r = 0; r < moduleCount; r++) {
-        for (let c = 0; c < moduleCount; c++) {
-          if (qr.isDark(r, c)) {
-            ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
-          }
-        }
-      }
-      ctx.draw();
-    }, 200);
+  // qrcode-generator → dataURL → Image · 与 coupons/detail 同款稳定方案
+  // 老 Canvas 路径在 Taro 4 + 当前基础库下行为不可靠·统一改 Image
+  const generateQrDataUrl = (payload: string): string => {
+    const qr = qrcode(0, "M");
+    qr.addData(payload);
+    qr.make();
+    return qr.createDataURL(6, 0);
   };
 
   useLoad(async () => {
@@ -74,7 +55,11 @@ export default function QrCode() {
       balance: acc?.account?.balance || 0,
     });
     if (lg?.openid) {
-      drawQr(lg.openid);
+      try {
+        setQrDataUrl(generateQrDataUrl(lg.openid));
+      } catch (e) {
+        console.warn("[qrcode] generate failed:", e);
+      }
     }
   });
 
@@ -99,7 +84,9 @@ export default function QrCode() {
             height: "260px",
           }}
         >
-          <Canvas canvasId="qr-canvas" style={{ width: "200px", height: "200px" }} />
+          {qrDataUrl && (
+            <Image src={qrDataUrl} style={{ width: "200px", height: "200px", display: "block" }} />
+          )}
         </View>
 
         <Text className="mt-4 block" style={{ fontSize: "10px", color: "#A98D78", fontFamily: "monospace" }}>
