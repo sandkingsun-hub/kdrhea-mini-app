@@ -34,6 +34,7 @@ const inputStyle = {
   lineHeight: "44px",
   fontSize: "14px",
   color: "#3C2218",
+  letterSpacing: "0",
   marginTop: "8px",
 } as const;
 

@@ -3,7 +3,7 @@
 import { Canvas, Text, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import qrcode from "qrcode-generator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 
 interface Coupon {
@@ -95,13 +95,20 @@ export default function CouponDetail() {
     const r = await callCloud("getCouponDetail", { couponId: id });
     if (r?.ok && r.coupon) {
       setCoupon(r.coupon);
-      // QR payload · 员工 scanner 解析
-      const payload = JSON.stringify({ t: "coupon", no: r.coupon.couponNo, vt: r.coupon.verifyToken });
-      drawQr(payload);
     } else {
       setLoadFailed(true);
     }
   });
+
+  // 等 coupon state 落 + Canvas mount 后再画 QR
+  // 之前 useLoad 里直接 drawQr 会撞到 Canvas 还没 render·setTimeout 也不稳
+  useEffect(() => {
+    if (!coupon || coupon.status !== "active") {
+      return;
+    }
+    const payload = JSON.stringify({ t: "coupon", no: coupon.couponNo, vt: coupon.verifyToken });
+    drawQr(payload);
+  }, [coupon]);
 
   if (loadFailed) {
     return (
