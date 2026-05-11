@@ -64,54 +64,78 @@ export default function CouponDetail() {
     }
   };
 
-  // Canvas 2D：page ready + coupon active 才画
-  // 用 useReady 替代 setTimeout/nextTick·确保 Canvas DOM 真挂载后再 query
+  // Canvas 2D：用 wx 原生 selectorQuery 直接走全局上下文·绕过 Taro 包装
+  // 加重试机制·因为部分基础库版本下 query 可能需要 1-2 帧才能拿到 node
   useEffect(() => {
     if (!pageReady || !coupon || coupon.status !== "active") {
       return;
     }
     const payload = JSON.stringify({ t: "coupon", no: coupon.couponNo, vt: coupon.verifyToken });
 
-    Taro.createSelectorQuery()
-      .select("#coupon-qr-canvas")
-      .fields({ node: true, size: true })
-      .exec((res) => {
-        const canvas = res?.[0]?.node;
-        if (!canvas) {
-          console.warn("[coupon-qr] canvas node not ready", res);
-          return;
-        }
-        const cssWidth = res[0].width || 200;
-        const cssHeight = res[0].height || 200;
+    let retryCount = 0;
+    const maxRetry = 5;
 
-        const qr = qrcode(0, "M");
-        qr.addData(payload);
-        qr.make();
-        const moduleCount = qr.getModuleCount();
+    const tryDraw = () => {
+      // @ts-expect-error wx 全局
+      const query = typeof wx !== "undefined" && wx.createSelectorQuery
+        // @ts-expect-error wx 全局
+        ? wx.createSelectorQuery()
+        : Taro.createSelectorQuery();
 
-        let dpr = 2;
-        try {
-          dpr = Taro.getWindowInfo().pixelRatio || 2;
-        } catch {}
+      query
+        .select("#coupon-qr-canvas")
+        .fields({ node: true, size: true })
+        .exec((res: any[]) => {
+          const canvas = res?.[0]?.node;
+          if (!canvas) {
+            retryCount++;
+            if (retryCount < maxRetry) {
+              console.warn(`[coupon-qr] node not ready·retry ${retryCount}/${maxRetry}`);
+              setTimeout(tryDraw, 150);
+            } else {
+              console.warn("[coupon-qr] node still not ready after retries", res);
+            }
+            return;
+          }
+          const cssWidth = res[0].width || 200;
+          const cssHeight = res[0].height || 200;
 
-        canvas.width = Math.round(cssWidth * dpr);
-        canvas.height = Math.round(cssHeight * dpr);
+          const qr = qrcode(0, "M");
+          qr.addData(payload);
+          qr.make();
+          const moduleCount = qr.getModuleCount();
 
-        const ctx = canvas.getContext("2d");
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.fillStyle = "#FBF7F1";
-        ctx.fillRect(0, 0, cssWidth, cssHeight);
-        ctx.fillStyle = "#3C2218";
+          let dpr = 2;
+          try {
+            // @ts-expect-error wx 全局
+            dpr = (typeof wx !== "undefined" && wx.getWindowInfo)
+              // @ts-expect-error wx 全局
+              ? wx.getWindowInfo().pixelRatio
+              : 2;
+          } catch {}
 
-        const cell = cssWidth / moduleCount;
-        for (let r = 0; r < moduleCount; r++) {
-          for (let c = 0; c < moduleCount; c++) {
-            if (qr.isDark(r, c)) {
-              ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
+          canvas.width = Math.round(cssWidth * dpr);
+          canvas.height = Math.round(cssHeight * dpr);
+
+          const ctx = canvas.getContext("2d");
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.fillStyle = "#FBF7F1";
+          ctx.fillRect(0, 0, cssWidth, cssHeight);
+          ctx.fillStyle = "#3C2218";
+
+          const cell = cssWidth / moduleCount;
+          for (let r = 0; r < moduleCount; r++) {
+            for (let c = 0; c < moduleCount; c++) {
+              if (qr.isDark(r, c)) {
+                ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
+              }
             }
           }
-        }
-      });
+          console.log("[coupon-qr] draw OK·moduleCount=", moduleCount);
+        });
+    };
+
+    tryDraw();
   }, [pageReady, coupon]);
 
   useLoad(async (options) => {
