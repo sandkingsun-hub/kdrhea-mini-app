@@ -79,10 +79,10 @@ export default function Index() {
     if (sList?.ok) {
       setServices(sList.items);
     }
-    // 积分礼品（纯积分）
-    const gList = await callCloud("listSku", { pointsOnly: true, limit: 4 });
+    // 积分礼品（纯积分·过滤 pet_food 宠粮·宠粮专属公益页·首页不展示）
+    const gList = await callCloud("listSku", { pointsOnly: true, limit: 8 });
     if (gList?.ok) {
-      setGifts(gList.items);
+      setGifts(gList.items.filter((sku: Sku) => sku.type !== "pet_food").slice(0, 4));
     }
     // 宠物面板（静默 · 出错不阻塞首页）
     setTimeout(() => {
