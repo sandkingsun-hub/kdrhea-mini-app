@@ -196,6 +196,6 @@
     "webpack": "5.94.0"
   },
   "lint-staged": {
-    "**/*": "eslint --fix"
+    "*.{ts,tsx,js,jsx,mjs,cjs,vue,html,css,scss,json,yml,yaml}": "eslint --fix"
   }
 }
