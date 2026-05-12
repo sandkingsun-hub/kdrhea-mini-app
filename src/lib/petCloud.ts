@@ -1,9 +1,13 @@
 import type { PetFoodSku, PetPanel, PetSkin, PetSpecies } from "~/types/pet";
-import Taro from "@tarojs/taro";
 
+// 与项目其他页面一致 · 用 wx.cloud（不是 Taro.cloud · Taro 无 cloud namespace 包装）
 async function call<T>(name: string, data?: Record<string, unknown>): Promise<T> {
-  // @ts-expect-error Taro Type · wx.cloud injected at runtime
-  const r = await Taro.cloud.callFunction({ name, data: data || {} });
+  // @ts-expect-error wx 由微信运行时注入·TS 不识别
+  if (typeof wx === "undefined" || !wx.cloud) {
+    return { ok: false, code: "NO_WX_CLOUD" } as unknown as T;
+  }
+  // @ts-expect-error wx.cloud.callFunction 由微信注入
+  const r = await wx.cloud.callFunction({ name, data: data || {} });
   return (r as { result: T }).result;
 }
 
