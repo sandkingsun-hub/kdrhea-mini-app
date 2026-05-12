@@ -2,6 +2,7 @@ import type { PetPanel } from "~/types/pet";
 import { Button, Canvas, View } from "@tarojs/components";
 import Taro from "@tarojs/taro";
 import { useEffect, useState } from "react";
+import PageWrapper from "~/components/PageWrapper";
 import { petCloud } from "~/lib/petCloud";
 
 const CANVAS_W = 640;
@@ -175,28 +176,30 @@ export default function ShareCardPage() {
   };
 
   return (
-    <View className="min-h-screen flex flex-col items-center pt-4" style={{ background: "#FBF7F1" }}>
-      <Canvas
-        id="share-canvas"
-        canvasId="share-canvas"
-        type="2d"
-        style={{ width: "320px", height: "569px", border: "1px solid rgba(60,34,24,0.1)" }}
-      />
-      <Button
-        onClick={handleSave}
-        className="mt-4 tracking-widest"
-        style={{ background: "#3C2218", color: "#FBF7F1" }}
-        disabled={!imgUrl}
-      >
-        💾 保存到相册
-      </Button>
-      <Button
-        openType="share"
-        className="mt-2 tracking-widest"
-        style={{ background: "#864D39", color: "#FBF7F1" }}
-      >
-        📤 转发好友
-      </Button>
-    </View>
+    <PageWrapper navTitle="爱心海报" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
+      <View className="min-h-screen flex flex-col items-center pb-8 pt-4" style={{ background: "#FBF7F1" }}>
+        <Canvas
+          id="share-canvas"
+          canvasId="share-canvas"
+          type="2d"
+          style={{ width: "320px", height: "569px", border: "1px solid rgba(60,34,24,0.1)" }}
+        />
+        <Button
+          onClick={handleSave}
+          className="mt-4 tracking-widest"
+          style={{ background: "#3C2218", color: "#FBF7F1" }}
+          disabled={!imgUrl}
+        >
+          💾 保存到相册
+        </Button>
+        <Button
+          openType="share"
+          className="mt-2 tracking-widest"
+          style={{ background: "#864D39", color: "#FBF7F1" }}
+        >
+          📤 转发好友
+        </Button>
+      </View>
+    </PageWrapper>
   );
 }
