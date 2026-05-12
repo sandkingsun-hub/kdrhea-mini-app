@@ -2,6 +2,7 @@ import type { PetFoodSku, PetPanel, PetState } from "~/types/pet";
 import { Button, Text, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import { useEffect, useRef, useState } from "react";
+import PageWrapper from "~/components/PageWrapper";
 import { PetSprite } from "~/components/Pet/PetSprite";
 import { petCloud } from "~/lib/petCloud";
 
@@ -96,7 +97,11 @@ export default function CharityPage() {
   };
 
   if (!panel) {
-    return <View className="p-6 text-[#937761]">载入中…</View>;
+    return (
+      <PageWrapper navTitle="公益与陪伴" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
+        <View className="p-6 text-[#937761]">载入中…</View>
+      </PageWrapper>
+    );
   }
 
   const expForNextLevel = EXP_THRESHOLDS[panel.pet.level - 1] || 0;
@@ -105,121 +110,121 @@ export default function CharityPage() {
     : 100;
 
   return (
-    <View className="min-h-screen bg-[#FBF7F1] px-5 pb-8 pt-4">
-      <Text className="block text-[18px] text-[#3C2218] font-serif">公益与陪伴</Text>
-
-      {/* 宠物舞台 */}
-      <View
-        className="relative mt-4 overflow-hidden rounded-[16rpx]"
-        style={{
-          background: "linear-gradient(180deg, #FFE4B5 0%, #F4A460 60%, #D2691E 100%)",
-          height: "360rpx",
-        }}
-        onClick={handlePetClick}
-      >
+    <PageWrapper navTitle="公益与陪伴" className="h-full bg-kd-paper" shouldShowBottomActions={false}>
+      <View className="min-h-screen bg-[#FBF7F1] px-5 pb-8 pt-4">
+        {/* 宠物舞台 */}
         <View
-          className="absolute bottom-0 w-full"
-          style={{ height: "40rpx", background: "linear-gradient(to top, #8B4513, transparent)" }}
-        />
-        <View
-          className="absolute bottom-[40rpx] left-1/2"
-          style={{ transform: "translateX(-50%)" }}
+          className="relative mt-4 overflow-hidden rounded-[16rpx]"
+          style={{
+            background: "linear-gradient(180deg, #FFE4B5 0%, #F4A460 60%, #D2691E 100%)",
+            height: "360rpx",
+          }}
+          onClick={handlePetClick}
         >
-          <PetSprite species={panel.species} skin={panel.skin} state={petState} />
+          <View
+            className="absolute bottom-0 w-full"
+            style={{ height: "40rpx", background: "linear-gradient(to top, #8B4513, transparent)" }}
+          />
+          <View
+            className="absolute bottom-[40rpx] left-1/2"
+            style={{ transform: "translateX(-50%)" }}
+          >
+            <PetSprite species={panel.species} skin={panel.skin} state={petState} />
+          </View>
+          <View
+            className="absolute left-[16rpx] top-[16rpx] rounded-[16rpx] px-[12rpx] py-[4rpx] text-[20rpx] tracking-wider"
+            style={{ background: "rgba(60,34,24,0.85)", color: "#FBF7F1" }}
+          >
+            {petState === "sleeping" ? "💤" : petState === "happy" ? "✨" : "🌟"}
+            {" "}
+            {panel.species.name_cn}
+            {" "}
+            · Lv
+            {panel.pet.level}
+          </View>
         </View>
-        <View
-          className="absolute left-[16rpx] top-[16rpx] rounded-[16rpx] px-[12rpx] py-[4rpx] text-[20rpx] tracking-wider"
-          style={{ background: "rgba(60,34,24,0.85)", color: "#FBF7F1" }}
-        >
-          {petState === "sleeping" ? "💤" : petState === "happy" ? "✨" : "🌟"}
-          {" "}
-          {panel.species.name_cn}
-          {" "}
-          · Lv
-          {panel.pet.level}
-        </View>
-      </View>
 
-      {/* 经验进度 */}
-      <View className="mt-3">
-        <View className="flex justify-between text-[20rpx] text-[#937761] tracking-wider">
-          <Text>经验</Text>
-          <Text>
-            {panel.pet.experience}
+        {/* 经验进度 */}
+        <View className="mt-3">
+          <View className="flex justify-between text-[20rpx] text-[#937761] tracking-wider">
+            <Text>经验</Text>
+            <Text>
+              {panel.pet.experience}
+              {" "}
+              /
+              {" "}
+              {expForNextLevel}
+              {" "}
+              → Lv
+              {Math.min(panel.pet.level + 1, 10)}
+            </Text>
+          </View>
+          <View className="mt-1 h-[6rpx] overflow-hidden rounded-[3rpx]" style={{ background: "rgba(60,34,24,0.08)" }}>
+            <View className="h-full" style={{ width: `${expProgress}%`, background: "#864D39" }} />
+          </View>
+        </View>
+
+        {/* 喂食选项 */}
+        <View className="mt-4">
+          <Text className="mb-2 block text-[20rpx] text-[#937761] tracking-widest">F E E D</Text>
+          <View className="flex gap-2">
+            {foods.map(sku => (
+              <View
+                key={sku._id}
+                onClick={() => void handleFeed(sku)}
+                className={`flex-1 border rounded-[12rpx] p-[16rpx] text-center ${feeding ? "opacity-50" : ""}`}
+                style={{
+                  borderColor: sku._id === "sku_pet_food_medium" ? "#3C2218" : "rgba(60,34,24,0.2)",
+                  borderWidth: "1rpx",
+                  background: "#FBF7F1",
+                }}
+              >
+                <Text className="block text-[28rpx]">🍱</Text>
+                <Text className="mt-1 block text-[20rpx] text-[#3C2218]">{sku.name}</Text>
+                <Text className="mt-1 block text-[18rpx] text-[#937761]">
+                  {sku.pointsPrice}
+                  {" "}
+                  积分 · +
+                  {sku.experience}
+                  {" "}
+                  经验
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* 个人公益累计 */}
+        <View className="mt-4 rounded-[12rpx] p-[24rpx]" style={{ background: "#F5EDE3" }}>
+          <Text className="block text-[20rpx] text-[#864D39] tracking-widest">
+            M Y    C O N T R I B U T I O N
+          </Text>
+          <Text className="mt-1 block text-[40rpx] text-[#3C2218] font-serif">
+            ¥
             {" "}
-            /
+            {(panel.charity.totalContributionFen / 100).toFixed(2)}
+          </Text>
+          <Text className="mt-1 block text-[20rpx] text-[#937761]">
+            累计助 KDRHEA 捐至
             {" "}
-            {expForNextLevel}
-            {" "}
-            → Lv
-            {Math.min(panel.pet.level + 1, 10)}
+            {panel.charity.currentOrg?.name_cn || "公益机构"}
           </Text>
         </View>
-        <View className="mt-1 h-[6rpx] overflow-hidden rounded-[3rpx]" style={{ background: "rgba(60,34,24,0.08)" }}>
-          <View className="h-full" style={{ width: `${expProgress}%`, background: "#864D39" }} />
-        </View>
-      </View>
 
-      {/* 喂食选项 */}
-      <View className="mt-4">
-        <Text className="mb-2 block text-[20rpx] text-[#937761] tracking-widest">F E E D</Text>
-        <View className="flex gap-2">
-          {foods.map(sku => (
-            <View
-              key={sku._id}
-              onClick={() => void handleFeed(sku)}
-              className={`flex-1 border rounded-[12rpx] p-[16rpx] text-center ${feeding ? "opacity-50" : ""}`}
-              style={{
-                borderColor: sku._id === "sku_pet_food_medium" ? "#3C2218" : "rgba(60,34,24,0.2)",
-                borderWidth: "1rpx",
-                background: "#FBF7F1",
-              }}
-            >
-              <Text className="block text-[28rpx]">🍱</Text>
-              <Text className="mt-1 block text-[20rpx] text-[#3C2218]">{sku.name}</Text>
-              <Text className="mt-1 block text-[18rpx] text-[#937761]">
-                {sku.pointsPrice}
-                {" "}
-                积分 · +
-                {sku.experience}
-                {" "}
-                经验
-              </Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* 个人公益累计 */}
-      <View className="mt-4 rounded-[12rpx] p-[24rpx]" style={{ background: "#F5EDE3" }}>
-        <Text className="block text-[20rpx] text-[#864D39] tracking-widest">
-          M Y    C O N T R I B U T I O N
+        {/* 透明度链接 */}
+        <Text className="mt-3 block text-center text-[20rpx] text-[#864D39] tracking-wider">
+          → 查看 KDRHEA 月度公益透明度报告
         </Text>
-        <Text className="mt-1 block text-[40rpx] text-[#3C2218] font-serif">
-          ¥
-          {" "}
-          {(panel.charity.totalContributionFen / 100).toFixed(2)}
-        </Text>
-        <Text className="mt-1 block text-[20rpx] text-[#937761]">
-          累计助 KDRHEA 捐至
-          {" "}
-          {panel.charity.currentOrg?.name_cn || "公益机构"}
-        </Text>
+
+        {/* 分享按钮 */}
+        <Button
+          onClick={handleShare}
+          className="mt-3 py-3 tracking-widest"
+          style={{ background: "#3C2218", color: "#FBF7F1" }}
+        >
+          📤 生成我的爱心海报
+        </Button>
       </View>
-
-      {/* 透明度链接 */}
-      <Text className="mt-3 block text-center text-[20rpx] text-[#864D39] tracking-wider">
-        → 查看 KDRHEA 月度公益透明度报告
-      </Text>
-
-      {/* 分享按钮 */}
-      <Button
-        onClick={handleShare}
-        className="mt-3 py-3 tracking-widest"
-        style={{ background: "#3C2218", color: "#FBF7F1" }}
-      >
-        📤 生成我的爱心海报
-      </Button>
-    </View>
+    </PageWrapper>
   );
 }

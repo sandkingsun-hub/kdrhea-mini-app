@@ -1,24 +1,23 @@
-.container {
+.pet-sprite-container {
   position: relative;
   display: inline-block;
 }
 
-.sprite {
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
+.pet-sprite-img {
+  display: block;
 }
 
-.zzz {
+.pet-sprite-zzz {
   position: absolute;
   top: -10rpx;
   right: -20rpx;
   font-size: 28rpx;
   color: #864d39;
-  animation: zzz-float 3s ease-in-out infinite;
   opacity: 0;
+  animation: pet-sprite-zzz-float 3s ease-in-out infinite;
 }
 
-@keyframes zzz-float {
+@keyframes pet-sprite-zzz-float {
   0% {
     opacity: 0;
     transform: translateY(0);

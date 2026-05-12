@@ -55,7 +55,8 @@ export default function Gifts() {
     }
     const r = await callCloud("listSku", params);
     if (r?.ok) {
-      setItems(r.items);
+      // 排除宠粮 SKU（pet_food 专属公益页内消费·不在礼遇页展示）
+      setItems(r.items.filter((sku: Sku) => sku.type !== "pet_food"));
     }
     const a = await callCloud("getMyAccount", { logsLimit: 1 });
     if (a?.ok && a.account) {
