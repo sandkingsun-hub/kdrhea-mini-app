@@ -1,3 +1,4 @@
+import type { PetPanel } from "~/types/pet";
 // KDRHEA 小程序首页 · 功能 dashboard 风格 · 品牌调性同官网
 import { Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
@@ -5,6 +6,7 @@ import { useState } from "react";
 import { cache } from "~/cache";
 import PageWrapper from "~/components/PageWrapper";
 import PrivacyPolicyPopup from "~/components/PrivacyPolicyPopup";
+import { petCloud } from "~/lib/petCloud";
 import { syncTabBarSelected } from "~/utils/tabbarSync";
 import "./index.scss";
 
@@ -37,7 +39,7 @@ function fenToYuan(n: number): string {
 const QUICK_ENTRIES = [
   { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约", route: "/pages/appointment/new" },
   { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "" },
-  { key: "journal", icon: "i-mdi-book-open-variant", label: "美学日记", route: "" },
+  { key: "charity", icon: "i-mdi-heart-pulse", label: "公益", route: "/pages/charity/index" },
   { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "/pages/coupons/index" },
 ];
 
@@ -46,6 +48,7 @@ export default function Index() {
   const [account, setAccount] = useState<Account | null>(null);
   const [services, setServices] = useState<Sku[]>([]);
   const [gifts, setGifts] = useState<Sku[]>([]);
+  const [petPanel, setPetPanel] = useState<PetPanel | null>(null);
 
   const callCloud = async (name: string, data?: any): Promise<any> => {
     try {
@@ -81,6 +84,13 @@ export default function Index() {
     if (gList?.ok) {
       setGifts(gList.items);
     }
+    // 宠物面板（静默）
+    try {
+      const pp = await petCloud.getPanel();
+      if (pp.ok) {
+        setPetPanel(pp as PetPanel);
+      }
+    } catch { /* silent */ }
   };
 
   useLoad(() => {
@@ -128,7 +138,7 @@ export default function Index() {
 
         {/* === 会员积分卡 · 核心区 · 米白底 + 棕字 === */}
         <View
-          className="mx-5 mt-3 px-6 py-7"
+          className="relative mx-5 mt-3 overflow-hidden px-6 py-7"
           style={{
             background: "#F5EDE3",
             borderRadius: "4px",
@@ -173,6 +183,68 @@ export default function Index() {
               {" "}
               待结算 · 7 天后到账
             </Text>
+          )}
+
+          {/* 季节装扮（如果有皮肤）· 低饱和粉色樱花 */}
+          {petPanel?.skin && (
+            <>
+              <View
+                className="absolute right-[28rpx] top-[16rpx] text-[36rpx] opacity-45"
+                style={{ color: "#D4A5A5" }}
+              >
+                ❀
+              </View>
+              <View
+                className="absolute bottom-[16rpx] left-[20rpx] text-[24rpx] opacity-30"
+                style={{ color: "#D4A5A5" }}
+              >
+                ❀
+              </View>
+            </>
+          )}
+
+          {/* 徽章带（如有徽章累加显示） */}
+          {(petPanel?.badges?.length ?? 0) > 0 && (
+            <View
+              className="mt-3 flex items-center pt-2"
+              style={{
+                borderTop: "1rpx solid rgba(60,34,24,0.08)",
+                gap: "10rpx",
+              }}
+            >
+              {petPanel!.badges.slice(0, 3).map(b => (
+                <View
+                  key={b._id}
+                  className="text-center text-[16rpx]"
+                  style={{
+                    width: "36rpx",
+                    height: "36rpx",
+                    lineHeight: "36rpx",
+                    borderRadius: "50%",
+                    color: "#FBF7F1",
+                    background: b.badgeId.endsWith("gold")
+                      ? "linear-gradient(135deg,#FFD700,#B8860B)"
+                      : b.badgeId.endsWith("silver")
+                        ? "linear-gradient(135deg,#D8D8D8,#9C9C9C)"
+                        : "linear-gradient(135deg,#CD7F32,#8B4513)",
+                  }}
+                >
+                  ♥
+                </View>
+              ))}
+              <Text
+                className="ml-1 text-[20rpx] tracking-widest"
+                style={{ color: "#864D39" }}
+              >
+                爱心同行者 ·
+                {" "}
+                {
+                  petPanel!.badges[0].badgeId.endsWith("gold") ? "金"
+                    : petPanel!.badges[0].badgeId.endsWith("silver") ? "银"
+                      : "铜"
+                }
+              </Text>
+            </View>
           )}
         </View>
 
