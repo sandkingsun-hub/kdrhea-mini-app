@@ -57,7 +57,6 @@ export interface PetFoodSku {
   pointsPrice: number;
   priceFen: number;
   experience: number;
-  charityRatio: number;
   description: string;
   sortOrder: number;
 }

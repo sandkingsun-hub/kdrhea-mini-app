@@ -12,9 +12,8 @@ const SEED = [
     priceFen: 5000,
     pointsPrice: 50,
     experience: 15,
-    charityRatio: 0.5,
     speciesRestrict: null,
-    description: '日常喂养 · 每袋给宠物 +15 经验',
+    description: '日常喂养 · 每袋给宠物 +15 经验 · KDRHEA 1:1 配捐',
     coverUrl: 'cloud://_placeholder.png',
     stock: -1,
     status: 'on_shelf',
@@ -29,9 +28,8 @@ const SEED = [
     priceFen: 20000,
     pointsPrice: 200,
     experience: 80,
-    charityRatio: 0.6,
     speciesRestrict: null,
-    description: '主推 · 性价比最高 · +80 经验 · 60% 公益折算',
+    description: '主推 · +80 经验 · KDRHEA 1:1 配捐',
     coverUrl: 'cloud://_placeholder.png',
     stock: -1,
     status: 'on_shelf',
@@ -46,9 +44,8 @@ const SEED = [
     priceFen: 50000,
     pointsPrice: 500,
     experience: 250,
-    charityRatio: 0.7,
     speciesRestrict: null,
-    description: '进阶 · 多花多益 · +250 经验 · 70% 公益折算',
+    description: '进阶 · +250 经验 · KDRHEA 1:1 配捐',
     coverUrl: 'cloud://_placeholder.png',
     stock: -1,
     status: 'on_shelf',
@@ -60,13 +57,25 @@ exports.main = async (event = {}) => {
   const { force = false } = event;
   const col = db.collection('sku');
   const now = new Date().toISOString();
-  let inserted = 0, skipped = 0;
+  let inserted = 0, skipped = 0, updated = 0;
   for (const seed of SEED) {
-    const data = { ...seed, createdAt: now, updatedAt: now };
-    try {
-      await col.doc(seed._id).get();
-      if (force) { await col.doc(seed._id).set({ data }); inserted++; } else skipped++;
-    } catch (e) { await col.add({ data }); inserted++; }
+    const data = { ...seed, updatedAt: now };
+    // 用 where 检测存在性（doc.get 在某些情况下行为不可靠）
+    const existR = await col.where({ _id: seed._id }).limit(1).get();
+    if (existR.data && existR.data.length > 0) {
+      if (force) {
+        // wx-server-sdk 没有真正的 replace · update/set 都是 merge
+        // 要清理旧字段（如 charityRatio）必须 remove + add
+        await col.doc(seed._id).remove();
+        await col.add({ data: { ...data, createdAt: now } });
+        updated++;
+      } else {
+        skipped++;
+      }
+    } else {
+      await col.add({ data: { ...data, createdAt: now } });
+      inserted++;
+    }
   }
-  return { ok: true, inserted, skipped };
+  return { ok: true, inserted, updated, skipped };
 };
