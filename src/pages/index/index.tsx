@@ -84,13 +84,19 @@ export default function Index() {
     if (gList?.ok) {
       setGifts(gList.items);
     }
-    // 宠物面板（静默）
-    try {
-      const pp = await petCloud.getPanel();
-      if (pp.ok) {
-        setPetPanel(pp as PetPanel);
-      }
-    } catch { /* silent */ }
+    // 宠物面板（静默 · 出错不阻塞首页）
+    setTimeout(() => {
+      void (async () => {
+        try {
+          const pp = await petCloud.getPanel();
+          if (pp.ok) {
+            setPetPanel(pp as PetPanel);
+          }
+        } catch {
+          // silent · 防止 cloud 调用 hang 卡住首页 loadHome
+        }
+      })();
+    }, 0);
   };
 
   useLoad(() => {
