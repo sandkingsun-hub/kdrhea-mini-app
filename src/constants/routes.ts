@@ -21,6 +21,8 @@ export enum RouteNames {
   PRIVACY_POLICY = "PRIVACY_POLICY",
   USER_AGREEMENT = "USER_AGREEMENT",
   DEVTOOLS = "DEVTOOLS",
+  CHARITY = "CHARITY",
+  SHARE_CARD = "SHARE_CARD",
 }
 
 // 页面路径常量
@@ -46,6 +48,8 @@ export const PAGES = {
   [RouteNames.PRIVACY_POLICY]: "/pages/agreements/privacy-policy",
   [RouteNames.USER_AGREEMENT]: "/pages/agreements/user-agreement",
   [RouteNames.DEVTOOLS]: "/pages/devtools/index",
+  [RouteNames.CHARITY]: "/pages/charity/index",
+  [RouteNames.SHARE_CARD]: "/pages/share-card/index",
 } as const;
 
 /**
