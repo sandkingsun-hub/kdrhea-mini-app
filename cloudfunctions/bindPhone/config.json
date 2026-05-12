@@ -1,1 +1,8 @@
-{ "permissions": { "openapi": ["phonenumber.getPhoneNumber"] } }
+{
+  "permissions": {
+    "openapi": [
+      "phonenumber.getPhoneNumber"
+    ]
+  },
+  "triggers": []
+}

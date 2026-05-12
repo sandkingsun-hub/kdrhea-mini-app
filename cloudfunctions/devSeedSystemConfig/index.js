@@ -47,11 +47,7 @@ function buildSeedDoc(now) {
 }
 
 exports.main = async (event = {}) => {
-  const wxContext = cloud.getWXContext();
-  const openid = wxContext.OPENID;
   const { force = false } = event;
-
-  if (!openid) return { ok: false, code: "NO_OPENID" };
 
   let exists = false;
   try {

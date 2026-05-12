@@ -170,3 +170,4 @@ logs
 ######################
 /coverage/
 /.nyc_output/
+.superpowers/

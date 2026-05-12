@@ -82,3 +82,40 @@ exports.main = async (event = {}) => {
 
   return { ok: true, templateId: inserted._id, templateNo };
 };
+// 复制这段代码追加到云函数 index.js 末尾即可
+// 幂等：重复 append 不会出问题（用 __corsWrapped 标记防双层）
+//
+// 批量 append 命令：
+//   for fn in funcA funcB funcC; do
+//     grep -q "__corsWrapped" cloudfunctions/$fn/index.js || \
+//       cat ~/.claude/skills/wechat-miniprogram-dev/references/cors_wrapper.js >> cloudfunctions/$fn/index.js
+//   done
+
+// === CORS wrapper for HTTP access service (auto-added, idempotent) ===
+if (exports.main && !exports.main.__corsWrapped) {
+  const _origMain = exports.main;
+  const CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+  exports.main = async (event = {}, context) => {
+    if (event && event.httpMethod === "OPTIONS") {
+      return { statusCode: 200, headers: CORS_HEADERS, body: "" };
+    }
+    if (event && typeof event.body === "string") {
+      try { event = { ...event, ...JSON.parse(event.body) }; } catch {}
+    }
+    const result = await _origMain(event, context);
+    if (result && typeof result === "object" && "statusCode" in result) {
+      return { ...result, headers: { ...CORS_HEADERS, ...(result.headers || {}) } };
+    }
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify(result),
+    };
+  };
+  exports.main.__corsWrapped = true;
+}

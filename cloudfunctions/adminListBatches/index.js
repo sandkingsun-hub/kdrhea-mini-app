@@ -46,3 +46,32 @@ exports.main = async (event = {}) => {
   ]);
   return { ok: true, items: list.data, total: count.total };
 };
+
+// === CORS wrapper for HTTP access service (auto-added, idempotent) ===
+if (exports.main && !exports.main.__corsWrapped) {
+  const _origMain = exports.main;
+  const CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+  exports.main = async (event = {}, context) => {
+    if (event && event.httpMethod === "OPTIONS") {
+      return { statusCode: 200, headers: CORS_HEADERS, body: "" };
+    }
+    if (event && typeof event.body === "string") {
+      try { event = { ...event, ...JSON.parse(event.body) }; } catch {}
+    }
+    const result = await _origMain(event, context);
+    if (result && typeof result === "object" && "statusCode" in result) {
+      return { ...result, headers: { ...CORS_HEADERS, ...(result.headers || {}) } };
+    }
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify(result),
+    };
+  };
+  exports.main.__corsWrapped = true;
+}
