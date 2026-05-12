@@ -31,4 +31,22 @@ export default kirklin({
     markdown: "prettier",
   },
   unocss: true,
+}, {
+  // jest test globals for __tests__/cloudfunctions
+  files: ["__tests__/cloudfunctions/**/*.{js,ts}"],
+  languageOptions: {
+    globals: {
+      describe: "readonly",
+      it: "readonly",
+      expect: "readonly",
+      beforeEach: "readonly",
+      afterEach: "readonly",
+      beforeAll: "readonly",
+      afterAll: "readonly",
+      jest: "readonly",
+    },
+  },
+  rules: {
+    "unused-imports/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+  },
 });
