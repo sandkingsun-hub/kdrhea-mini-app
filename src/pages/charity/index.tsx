@@ -17,13 +17,21 @@ export default function CharityPage() {
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = async () => {
-    const r = await petCloud.getPanel();
-    if (r.ok) {
-      setPanel(r as PetPanel);
+    try {
+      const r = await petCloud.getPanel();
+      if (r.ok && r.pet && r.species) {
+        setPanel(r as PetPanel);
+      }
+    } catch (e) {
+      console.warn("[charity] getPanel failed:", e);
     }
-    const sf = await petCloud.listFoodSku();
-    if (sf.ok) {
-      setFoods(sf.items.sort((a, b) => a.sortOrder - b.sortOrder));
+    try {
+      const sf = await petCloud.listFoodSku();
+      if (sf.ok) {
+        setFoods(sf.items.sort((a, b) => a.sortOrder - b.sortOrder));
+      }
+    } catch (e) {
+      console.warn("[charity] listFoodSku failed:", e);
     }
   };
 
@@ -60,7 +68,16 @@ export default function CharityPage() {
     resetSleepTimer();
     setFeeding(true);
     setPetState("happy");
-    const r = await petCloud.feed(sku._id);
+    let r: Awaited<ReturnType<typeof petCloud.feed>>;
+    try {
+      r = await petCloud.feed(sku._id);
+    } catch (e) {
+      console.warn("[charity] feed failed:", e);
+      Taro.showToast({ title: "网络错误·请稍后再试", icon: "none" });
+      setFeeding(false);
+      setPetState("idle");
+      return;
+    }
     if (!r.ok) {
       Taro.showToast({
         title: r.code === "SPEND_FAILED" ? "积分不足" : `失败 ${r.code || ""}`,

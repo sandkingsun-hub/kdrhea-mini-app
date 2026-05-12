@@ -41,8 +41,14 @@ export default function ShareCardPage() {
           return;
         }
         const ctx = canvas.getContext("2d");
-        // @ts-expect-error wx.getSystemInfoSync
-        const dpr = (typeof wx !== "undefined" ? wx.getSystemInfoSync().pixelRatio : 2) || 2;
+        // 用新 API · getSystemInfoSync 已废弃
+        let dpr = 2;
+        try {
+          // @ts-expect-error wx.getWindowInfo · 新 API
+          if (typeof wx !== "undefined" && wx.getWindowInfo) {
+            dpr = wx.getWindowInfo().pixelRatio || 2;
+          }
+        } catch { /* keep dpr=2 */ }
         canvas.width = CANVAS_W * dpr;
         canvas.height = CANVAS_H * dpr;
         ctx.scale(dpr, dpr);
@@ -150,9 +156,13 @@ export default function ShareCardPage() {
 
   useEffect(() => {
     void (async () => {
-      const r = await petCloud.getPanel();
-      if (r.ok) {
-        setPanel(r as PetPanel);
+      try {
+        const r = await petCloud.getPanel();
+        if (r.ok && r.pet && r.species) {
+          setPanel(r as PetPanel);
+        }
+      } catch (e) {
+        console.warn("[share-card] getPanel failed:", e);
       }
     })();
   }, []);
