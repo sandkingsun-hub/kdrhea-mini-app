@@ -103,16 +103,24 @@ exports.main = async (event = {}) => {
   const { newLevel, newExp, levelUps } = calcLevelUp(pet.level, pet.experience, sku.experience);
 
   // 5. 公益记账
-  const charityAddedFen = Math.floor(sku.priceFen * sku.charityRatio);
+  // amountFen = 用户花的积分等值现金（1 积分 = 1 fen）· 用户视角"我的贡献"
+  // companyDonatedFen = 企业按 charityRatio 真捐到机构的金额 · 月度结算用
+  const charityAddedFen = sku.pointsPrice;
+  const companyDonatedFen = Math.floor(sku.pointsPrice * (sku.charityRatio || 0));
   const orgR = await db.collection('charity_org').where({ status: 'active' }).limit(1).get();
   const orgId = orgR.data[0]?._id || 'xuzhou_animal_rescue';
   const now = new Date().toISOString();
   await db.collection('charity_ledger').add({
     data: {
-      openid, amountFen: charityAddedFen,
-      sourceType: 'spend_pet_food', sourceRefId: pointsLogId,
-      orgId, status: 'pending',
-      settledMonth: null, settledAt: null,
+      openid,
+      amountFen: charityAddedFen,
+      companyDonatedFen,
+      sourceType: 'spend_pet_food',
+      sourceRefId: pointsLogId,
+      orgId,
+      status: 'pending',
+      settledMonth: null,
+      settledAt: null,
       createdAt: now,
     },
   });

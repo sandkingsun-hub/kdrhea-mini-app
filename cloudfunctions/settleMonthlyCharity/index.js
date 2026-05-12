@@ -47,6 +47,8 @@ exports.main = async () => {
   const { lastMonthStart, lastMonthEnd } = lastMonthRange();
 
   // 1. 聚合 charity_ledger 上月 pending
+  // cashFromUsersFen = 企业真捐部分（companyDonatedFen）· 月度对外结算口径
+  // userTotalSpentFen = 用户花费等值（amountFen）· 内部对账用
   let byOrgUsers = [];
   try {
     const ledgerR = await db.collection('charity_ledger')
@@ -54,13 +56,15 @@ exports.main = async () => {
       .match({ createdAt: _.gte(lastMonthStart).and(_.lt(lastMonthEnd)), status: 'pending' })
       .group({
         _id: '$orgId',
-        cashFromUsersFen: _.aggregate.sum('$amountFen'),
+        cashFromUsersFen: _.aggregate.sum('$companyDonatedFen'),
+        userTotalSpentFen: _.aggregate.sum('$amountFen'),
         contributorsCount: _.aggregate.addToSet('$openid'),
       })
       .end();
     byOrgUsers = ledgerR.list.map(o => ({
       orgId: o._id,
-      cashFromUsersFen: o.cashFromUsersFen,
+      cashFromUsersFen: o.cashFromUsersFen || 0,
+      userTotalSpentFen: o.userTotalSpentFen || 0,
       contributorsCount: o.contributorsCount.length,
     }));
   } catch (e) { /* 集合空·跳过 */ }

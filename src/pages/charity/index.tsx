@@ -189,13 +189,29 @@ export default function CharityPage() {
               <View
                 key={sku._id}
                 onClick={() => void handleFeed(sku)}
-                className={`flex-1 border rounded-[12rpx] p-[16rpx] text-center ${feeding ? "opacity-50" : ""}`}
+                className={`relative flex-1 border rounded-[12rpx] p-[16rpx] text-center ${feeding ? "opacity-50" : ""}`}
                 style={{
-                  borderColor: sku._id === "sku_pet_food_medium" ? "#3C2218" : "rgba(60,34,24,0.2)",
+                  borderColor: "rgba(60,34,24,0.2)",
                   borderWidth: "1rpx",
                   background: "#FBF7F1",
                 }}
               >
+                {sku._id === "sku_pet_food_medium" && (
+                  <View
+                    className="absolute text-center text-[16rpx]"
+                    style={{
+                      top: "-12rpx",
+                      right: "-8rpx",
+                      padding: "2rpx 8rpx",
+                      background: "#3C2218",
+                      color: "#FBF7F1",
+                      borderRadius: "8rpx",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    主推
+                  </View>
+                )}
                 <Text className="block text-[28rpx]">🍱</Text>
                 <Text className="mt-1 block text-[20rpx] text-[#3C2218]">{sku.name}</Text>
                 <Text className="mt-1 block text-[18rpx] text-[#937761]">
