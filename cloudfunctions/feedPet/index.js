@@ -60,10 +60,17 @@ exports.main = async (event = {}) => {
     return { ok: false, code: 'SKU_NOT_AVAILABLE' };
   }
 
-  // 2. 扣积分
+  // 2. 扣积分 · 云函数间调用必须显式传 targetOpenid（wxContext 不传递）
   const spendR = await cloud.callFunction({
     name: 'spendPoints',
-    data: { delta: sku.pointsPrice, type: 'spend_pet_food', refType: 'sku', refId: skuId, description: `喂宠 ${sku.name}` },
+    data: {
+      targetOpenid: openid,
+      delta: sku.pointsPrice,
+      type: 'spend_pet_food',
+      refType: 'sku',
+      refId: skuId,
+      description: `喂宠 ${sku.name}`,
+    },
   });
   if (!spendR.result || !spendR.result.ok) {
     return { ok: false, code: 'SPEND_FAILED', detail: spendR.result };
