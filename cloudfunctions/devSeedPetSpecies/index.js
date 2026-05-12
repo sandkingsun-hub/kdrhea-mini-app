@@ -40,8 +40,19 @@ const SEED = [
   },
 ];
 
+async function ensureCollection(name) {
+  try {
+    await db.collection(name).count();
+  } catch (e) {
+    if (String(e).includes('not exist')) {
+      try { await db.createCollection(name); } catch {}
+    }
+  }
+}
+
 exports.main = async (event = {}) => {
   const { force = false } = event;
+  await ensureCollection('pet_species');
   const col = db.collection('pet_species');
   const now = new Date().toISOString();
   let inserted = 0, skipped = 0;
