@@ -1,5 +1,5 @@
 // 我的 · Tab 4 · 用户卡 + 入口列表
-import { Image, Text, View } from "@tarojs/components";
+import { Button, Image, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -176,6 +176,30 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* 联系客服 · 微信原生客服 button · 直接跳微信会话 */}
+        <View className="mx-5 mt-4">
+          <Button
+            openType="contact"
+            sessionFrom="kdrhea-profile"
+            style={{
+              width: "100%",
+              height: "48px",
+              lineHeight: "48px",
+              borderRadius: "999px",
+              background: "var(--kd-brown-900)",
+              color: "var(--kd-paper)",
+              fontFamily: "var(--kd-font-sans)",
+              fontSize: "13px",
+              fontWeight: 500,
+              letterSpacing: "0.06em",
+              border: "none",
+              padding: 0,
+            }}
+          >
+            💬 联系客服 · 在线咨询
+          </Button>
+        </View>
+
         {/* 操作入口 */}
         <View className="mt-5 px-6">
           <MenuItem
@@ -198,12 +222,6 @@ export default function Profile() {
             label="我的优惠"
             onClick={() => Taro.navigateTo({ url: "/pages/coupons/index" })}
           />
-          <MenuItem
-            icon="i-mdi-headset"
-            label="联系客服"
-            onClick={() => Taro.showToast({ title: "联系客服 · 待开发", icon: "none" })}
-          />
-
           {/* 员工入口 · 仅 staff/admin 可见 */}
           {(user?.role === "staff" || user?.role === "admin") && (
             <>

@@ -50,9 +50,35 @@ const SLOT_OPTIONS = [
   { key: "evening", label: "晚间 17–19" },
 ];
 
+type WorkTab = "pending" | "active" | "completed" | "all";
+
+const TAB_DEFS: { key: WorkTab; label: string }[] = [
+  { key: "pending", label: "待处理" },
+  { key: "active", label: "进行中" },
+  { key: "completed", label: "已完成" },
+  { key: "all", label: "全部" },
+];
+
+function isInTab(status: string, tab: WorkTab) {
+  if (tab === "all") {
+    return true;
+  }
+  if (tab === "pending") {
+    return status === "pending";
+  }
+  if (tab === "active") {
+    return status === "confirmed" || status === "rescheduled";
+  }
+  if (tab === "completed") {
+    return status === "completed";
+  }
+  return false;
+}
+
 export default function StaffAppointments() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [items, setItems] = useState<Appointment[]>([]);
+  const [tab, setTab] = useState<WorkTab>("pending");
   const [editing, setEditing] = useState<string | null>(null);
   const [editFinalDate, setEditFinalDate] = useState("");
   const [editFinalSlotIdx, setEditFinalSlotIdx] = useState(0);
@@ -106,7 +132,19 @@ export default function StaffAppointments() {
     });
   }, [items]);
 
-  const pendingCount = useMemo(() => items.filter(a => a.status === "pending").length, [items]);
+  // 当前 tab 下的列表
+  const tabFilteredItems = useMemo(
+    () => sortedItems.filter(a => isInTab(a.status, tab)),
+    [sortedItems, tab],
+  );
+
+  // 每个 tab 的数量 · 用于 badge
+  const tabCounts = useMemo(() => ({
+    pending: items.filter(a => isInTab(a.status, "pending")).length,
+    active: items.filter(a => isInTab(a.status, "active")).length,
+    completed: items.filter(a => isInTab(a.status, "completed")).length,
+    all: items.length,
+  }), [items]);
 
   const startEdit = (a: Appointment) => {
     setEditing(a._id);
@@ -171,53 +209,73 @@ export default function StaffAppointments() {
           </Text>
         </View>
 
-        {/* 统计行 */}
+        {/* 工作台 tab 切换 */}
         <View
-          className="mt-5 flex items-center justify-between"
+          className="mt-5"
           style={{
-            background: "#FAF7F3",
-            border: "1px solid #E8DFD4",
-            borderRadius: "10px",
-            padding: "10px 16px",
+            display: "flex",
+            gap: "6px",
+            overflowX: "auto",
+            paddingBottom: "2px",
           }}
         >
-          <Text style={{ fontSize: "12px", color: "#864D39", letterSpacing: "0.04em" }}>
-            全部
-            {" "}
-            {items.length}
-            {" "}
-            条
-          </Text>
-          {pendingCount > 0 && (
-            <View
-              style={{
-                background: "#3C2218",
-                color: "#FBF7F1",
-                fontSize: "11px",
-                letterSpacing: "0.06em",
-                padding: "3px 12px",
-                borderRadius: "999px",
-              }}
-            >
-              待处理
-              {" "}
-              {pendingCount}
-            </View>
-          )}
+          {TAB_DEFS.map((t) => {
+            const isActive = tab === t.key;
+            const count = tabCounts[t.key];
+            return (
+              <View
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{
+                  flex: 1,
+                  minWidth: "70px",
+                  padding: "10px 8px",
+                  textAlign: "center",
+                  background: isActive ? "#3C2218" : "#FAF7F3",
+                  border: `1px solid ${isActive ? "#3C2218" : "#E8DFD4"}`,
+                  borderRadius: "10px",
+                }}
+              >
+                <Text style={{
+                  display: "block",
+                  fontSize: "12px",
+                  color: isActive ? "#FBF7F1" : "#3C2218",
+                  fontWeight: isActive ? 600 : 400,
+                  letterSpacing: "0.04em",
+                }}
+                >
+                  {t.label}
+                </Text>
+                <Text style={{
+                  display: "block",
+                  fontSize: "11px",
+                  color: isActive ? "#FBF7F1" : "#864D39",
+                  marginTop: "2px",
+                  fontFamily: "var(--kd-font-display)",
+                  opacity: count > 0 || isActive ? 1 : 0.4,
+                }}
+                >
+                  {count}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
-        {/* 列表 */}
+        {/* 列表（按 tab 过滤） */}
         <View className="mt-4">
-          {items.length === 0 && (
+          {tabFilteredItems.length === 0 && (
             <View className="text-center" style={{ paddingTop: "60px" }}>
               <View className="i-mdi-calendar-blank-outline mx-auto" style={{ fontSize: "40px", color: "#DCC9B6" }} />
               <Text className="mt-3 block" style={{ fontSize: "12px", color: "#937761" }}>
-                暂无预约
+                {tab === "pending" ? "没有待处理预约"
+                  : tab === "active" ? "没有进行中预约"
+                    : tab === "completed" ? "还没有完成的预约" : "暂无预约"}
               </Text>
             </View>
           )}
 
-          {sortedItems.map((a) => {
+          {tabFilteredItems.map((a) => {
             const s = STATUS_LABEL[a.status] || STATUS_LABEL.pending;
             return (
               <View
