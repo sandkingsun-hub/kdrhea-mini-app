@@ -1,5 +1,5 @@
 // SKU 详情页 · 看项目详细 + 立即下单
-import { Text, View } from "@tarojs/components";
+import { Button, Text, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -282,7 +282,29 @@ export default function SkuDetail() {
           }}
         >
           <View className="flex items-baseline justify-between">
-            <View>
+            {/* 客服图标 · 微信原生 button */}
+            <Button
+              openType="contact"
+              sessionFrom={`sku-${sku._id}`}
+              style={{
+                width: "44px",
+                height: "44px",
+                minWidth: "44px",
+                padding: 0,
+                margin: 0,
+                lineHeight: "44px",
+                background: "#FAF7F3",
+                border: "1px solid #DCC9B6",
+                borderRadius: "999px",
+                color: "#3C2218",
+                fontSize: "18px",
+                marginRight: "12px",
+                flexShrink: 0,
+              }}
+            >
+              💬
+            </Button>
+            <View style={{ flex: 1 }}>
               <Text style={{ fontSize: "11px", letterSpacing: "0.16em", color: "#937761" }}>
                 应付
               </Text>

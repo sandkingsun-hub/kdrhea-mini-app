@@ -78,7 +78,7 @@ export default function Profile() {
     load();
   });
 
-  const handleInvite = () => Taro.navigateTo({ url: "/pages/share/index" });
+  const handleInvite = () => Taro.navigateTo({ url: "/pages/invite/card" });
 
   const goEdit = () => Taro.navigateTo({ url: "/pages/account/edit" });
   const goRecords = (tab?: string) =>

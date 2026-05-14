@@ -36,7 +36,7 @@ function fenToYuan(n: number): string {
 
 const QUICK_ENTRIES = [
   { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约", route: "/pages/appointment/new" },
-  { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "" },
+  { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "/pages/invite/card" },
   { key: "medicine", icon: "i-mdi-pill", label: "药品记录", route: "/pages/my-medicines/index" },
   { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "/pages/coupons/index" },
 ];

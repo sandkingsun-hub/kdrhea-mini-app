@@ -1,5 +1,6 @@
 export default definePageConfig({
-  navigationBarTitleText: "分享设置",
+  navigationStyle: "custom",
+  navigationBarTitleText: "邀请好友",
   enableShareAppMessage: true,
   enableShareTimeline: true,
 });
