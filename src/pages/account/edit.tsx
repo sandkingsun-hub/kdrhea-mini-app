@@ -1,5 +1,5 @@
-// 编辑个人资料 · 头像 + 昵称 + 手机号
-import { Button, Image, Input, Text, View } from "@tarojs/components";
+// 编辑个人资料 · 头像 + 昵称 + 手机号 + 生日
+import { Button, Image, Input, Picker, Text, View } from "@tarojs/components";
 import Taro, { useLoad } from "@tarojs/taro";
 import { useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
@@ -9,6 +9,7 @@ interface UserPartial {
   phone: string | null;
   avatarUrl: string | null;
   avatarKind: string | null;
+  birthDate: string | null;
 }
 
 // 12 个虚拟形象 · 使用 unocss icon
@@ -44,11 +45,13 @@ export default function AccountEdit() {
     phone: null,
     avatarUrl: null,
     avatarKind: "default",
+    birthDate: null,
   });
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [bindingPhone, setBindingPhone] = useState(false);
+  const [savingBirthDate, setSavingBirthDate] = useState(false);
 
   const callCloud = async (n: string, d?: any): Promise<any> => {
     try {
@@ -72,6 +75,7 @@ export default function AccountEdit() {
         phone: lg.user.phone || null,
         avatarUrl: lg.user.avatarUrl || null,
         avatarKind: lg.user.avatarKind || "default",
+        birthDate: lg.user.birthDate || null,
       });
       setNicknameDraft(lg.user.nickname || "");
     }
@@ -141,6 +145,25 @@ export default function AccountEdit() {
     setSavingNickname(false);
     if (r?.ok) {
       setUser({ ...user, nickname: nicknameDraft || null });
+      Taro.showToast({ title: "已保存", icon: "success" });
+    } else {
+      Taro.showToast({ title: r?.code || "保存失败", icon: "none" });
+    }
+  };
+
+  const handleBirthDateChange = async (e: any) => {
+    if (savingBirthDate) {
+      return;
+    }
+    const value = e?.detail?.value;
+    if (!value || value === user.birthDate) {
+      return;
+    }
+    setSavingBirthDate(true);
+    const r = await callCloud("updateUserProfile", { birthDate: value });
+    setSavingBirthDate(false);
+    if (r?.ok) {
+      setUser({ ...user, birthDate: value });
       Taro.showToast({ title: "已保存", icon: "success" });
     } else {
       Taro.showToast({ title: r?.code || "保存失败", icon: "none" });
@@ -353,6 +376,46 @@ export default function AccountEdit() {
           </View>
           <Text className="mt-2 block" style={{ fontSize: "10px", color: "#937761" }}>
             微信验证 · 不支持手填
+          </Text>
+        </View>
+
+        {/* 生日 · 用于会员生日礼遇 */}
+        <View
+          className="mt-5"
+          style={{ background: "#FAF7F3", border: "1px solid #E8DFD4", borderRadius: "16px", padding: "18px 16px" }}
+        >
+          <SectionLabel text="生日" />
+          <Picker
+            mode="date"
+            value={user.birthDate || "1990-01-01"}
+            start="1940-01-01"
+            end={new Date().toISOString().slice(0, 10)}
+            onChange={handleBirthDateChange}
+          >
+            <View
+              className="mt-3 flex items-center justify-between"
+              style={{
+                background: "#FBF7F1",
+                border: "1px solid #DCC9B6",
+                borderRadius: "10px",
+                paddingLeft: "12px",
+                paddingRight: "12px",
+                height: "44px",
+              }}
+            >
+              <View className="flex items-center" style={{ flex: 1 }}>
+                <View className="i-mdi-cake-variant-outline" style={{ fontSize: "16px", color: "#5E3425", marginRight: "8px" }} />
+                <Text style={{ fontSize: "14px", color: user.birthDate ? "#3C2218" : "#A98D78", letterSpacing: "0.04em" }}>
+                  {user.birthDate || "未设置 · 点击选择"}
+                </Text>
+              </View>
+              <Text style={{ fontSize: "11px", color: "#864D39", letterSpacing: "0.08em" }}>
+                {savingBirthDate ? "保存中" : (user.birthDate ? "更换 →" : "选择 →")}
+              </Text>
+            </View>
+          </Picker>
+          <Text className="mt-2 block" style={{ fontSize: "10px", color: "#937761" }}>
+            会员生日享专属礼遇 · 仅用于祝福 · 不外泄
           </Text>
         </View>
       </View>

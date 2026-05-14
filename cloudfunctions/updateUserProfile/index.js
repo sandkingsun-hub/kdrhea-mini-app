@@ -29,7 +29,7 @@ const ALLOWED_AVATAR_KINDS = new Set([
 exports.main = async (event = {}) => {
   const wxContext = cloud.getWXContext();
   const openid = wxContext.OPENID;
-  const { nickname, avatarKind, avatarUrl } = event;
+  const { nickname, avatarKind, avatarUrl, birthDate } = event;
 
   if (!openid) {
     return { ok: false, code: "NO_OPENID" };
@@ -64,6 +64,13 @@ exports.main = async (event = {}) => {
     if (avatarUrl) {
       data.avatarKind = null;
     }
+  }
+
+  if (birthDate !== undefined) {
+    if (birthDate !== null && (typeof birthDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate))) {
+      return { ok: false, code: "INVALID_BIRTH_DATE" };
+    }
+    data.birthDate = birthDate;
   }
 
   await db.collection("users").where({ _openid: openid }).update({ data });

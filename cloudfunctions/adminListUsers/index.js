@@ -63,6 +63,11 @@ exports.main = async (event = {}) => {
     registeredAt: u.registeredAt,
     lastActiveAt: u.lastActiveAt,
     activatedFromOldCustomer: !!u.activatedFromOldCustomer,
+    level: u.level || 0,
+    currentYearScoreFen: u.currentYearScoreFen || 0,
+    lastYearScoreFen: u.lastYearScoreFen || 0,
+    lifetimeContributionFen: u.lifetimeContributionFen || 0,
+    birthDate: u.birthDate || null,
   }));
 
   return { ok: true, items, total: count.total, hasMore: skip + items.length < count.total };

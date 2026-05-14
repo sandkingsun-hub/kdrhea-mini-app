@@ -91,11 +91,33 @@ exports.main = async (event = {}) => {
   };
   const addRes = await db.collection("user_charity_claims").add({ data: claim });
 
+  // 累加贡献分 + 跑等级升级判定 · 公益按顾客出资金额（donatedFen 是 KDRHEA 配捐 · pointsPrice 积分=分 是顾客出的部分）
+  // 1 积分 = 1 分 · 顾客花 pointsPrice 积分 = 同等金额贡献
+  let levelUpgrade = null;
+  try {
+    const upgradeRes = await cloud.callFunction({
+      name: "recordContribution",
+      data: {
+        customerOpenid: openid,
+        deltaFen: card.pointsPrice,
+        source: "charity",
+        refId: addRes._id,
+        description: `公益认领 · ${card.name}`,
+      },
+    });
+    if (upgradeRes.result?.ok) {
+      levelUpgrade = upgradeRes.result;
+    }
+  } catch (e) {
+    console.warn("recordContribution failed:", e);
+  }
+
   return {
     ok: true,
     claimId: addRes._id,
     sn,
     claim,
+    levelUpgrade,
     balanceAfter: spendRes.result.balanceAfter,
   };
 };

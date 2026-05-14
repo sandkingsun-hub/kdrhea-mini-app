@@ -39,8 +39,24 @@ function maskPhone(p: string | null) {
   return `${p.slice(0, 3)} **** ${p.slice(-4)}`;
 }
 
+interface MemberLevel {
+  level: number;
+  levelName: string;
+  currentYearScoreFen: number;
+  nextLevel: number | null;
+  nextLevelName: string | null;
+  nextLevelThresholdFen: number | null;
+  distanceFen: number;
+  pointsMultiplier: number;
+}
+
+function fenToYuan(fen: number): string {
+  return (fen / 100).toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
+  const [memberLevel, setMemberLevel] = useState<MemberLevel | null>(null);
 
   const callCloud = async (name: string, data?: any): Promise<any> => {
     try {
@@ -68,6 +84,19 @@ export default function Profile() {
         registeredAt: lg.user.registeredAt,
         activatedFromOldCustomer: lg.user.activatedFromOldCustomer,
         role: lg.user.role || "customer",
+      });
+    }
+    const ml = await callCloud("getMyMemberLevel");
+    if (ml?.ok) {
+      setMemberLevel({
+        level: ml.level,
+        levelName: ml.levelName,
+        currentYearScoreFen: ml.currentYearScoreFen,
+        nextLevel: ml.nextLevel,
+        nextLevelName: ml.nextLevelName,
+        nextLevelThresholdFen: ml.nextLevelThresholdFen,
+        distanceFen: ml.distanceFen,
+        pointsMultiplier: ml.pointsMultiplier,
       });
     }
   };
@@ -175,6 +204,158 @@ export default function Profile() {
             <View className="i-mdi-chevron-right" style={{ fontSize: "18px", color: "#937761", marginLeft: "8px" }} />
           </View>
         </View>
+
+        {/* 会员等级卡 · L0 显示入会 CTA · L1+ 显示等级 + 进度 */}
+        {memberLevel && (
+          <View
+            className="mx-5 mt-3"
+            style={{
+              background: memberLevel.level >= 3 ? "#1F1610" : "#FAF7F3",
+              border: memberLevel.level >= 3 ? "1px solid #3C2218" : "1px solid #E8DFD4",
+              borderRadius: "14px",
+              padding: "16px 18px",
+            }}
+          >
+            <View className="flex items-center justify-between">
+              <View>
+                <Text style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.24em",
+                  color: memberLevel.level >= 3 ? "#C9A878" : "#864D39",
+                  fontWeight: 600,
+                }}
+                >
+                  M E M B E R S H I P
+                </Text>
+                <Text
+                  className="kd-display mt-1 block"
+                  style={{
+                    fontSize: "18px",
+                    letterSpacing: "0.08em",
+                    color: memberLevel.level >= 3 ? "#E8D9B8" : "#3C2218",
+                    fontWeight: 500,
+                  }}
+                >
+                  {memberLevel.level === 0 ? "访客" : memberLevel.levelName}
+                </Text>
+              </View>
+              {memberLevel.level > 0 && (
+                <View style={{
+                  background: memberLevel.level >= 3 ? "#C9A878" : "#3C2218",
+                  color: memberLevel.level >= 3 ? "#1F1610" : "#FBF7F3",
+                  fontSize: "10px",
+                  letterSpacing: "0.08em",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  fontWeight: 600,
+                }}
+                >
+                  {memberLevel.pointsMultiplier.toFixed(1)}
+                  x 积分
+                </View>
+              )}
+            </View>
+
+            {/* L0 · CTA */}
+            {memberLevel.level === 0 && (
+              <View className="mt-3">
+                <Text
+                  className="block"
+                  style={{
+                    fontSize: "12px",
+                    color: "#864D39",
+                    lineHeight: 1.6,
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  成为 KDRHEA 会员 · 累计消费或公益满
+                  {" "}
+                  {memberLevel.nextLevelThresholdFen ? `¥${fenToYuan(memberLevel.nextLevelThresholdFen)}` : "¥680"}
+                </Text>
+                <Text
+                  className="mt-2 block"
+                  style={{
+                    fontSize: "11px",
+                    color: "#937761",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  距下一级
+                  {" "}
+                  {memberLevel.nextLevelName}
+                  {" "}
+                  还差 ¥
+                  {fenToYuan(memberLevel.distanceFen)}
+                </Text>
+              </View>
+            )}
+
+            {/* L1+ · 进度条 */}
+            {memberLevel.level > 0 && (
+              <View className="mt-3">
+                <View style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  marginBottom: "6px",
+                }}
+                >
+                  <Text style={{
+                    fontSize: "10px",
+                    color: memberLevel.level >= 3 ? "#A98D78" : "#864D39",
+                    letterSpacing: "0.04em",
+                  }}
+                  >
+                    本年贡献 ¥
+                    {fenToYuan(memberLevel.currentYearScoreFen)}
+                  </Text>
+                  {memberLevel.nextLevelName && (
+                    <Text style={{
+                      fontSize: "10px",
+                      color: memberLevel.level >= 3 ? "#A98D78" : "#937761",
+                      letterSpacing: "0.04em",
+                    }}
+                    >
+                      距
+                      {" "}
+                      {memberLevel.nextLevelName}
+                      {" "}
+                      还差 ¥
+                      {fenToYuan(memberLevel.distanceFen)}
+                    </Text>
+                  )}
+                  {!memberLevel.nextLevelName && (
+                    <Text style={{
+                      fontSize: "10px",
+                      color: "#C9A878",
+                      letterSpacing: "0.04em",
+                      fontStyle: "italic",
+                    }}
+                    >
+                      顶级会员
+                    </Text>
+                  )}
+                </View>
+                {memberLevel.nextLevelThresholdFen && (
+                  <View style={{
+                    height: "4px",
+                    background: memberLevel.level >= 3 ? "#3C2218" : "#E8DFD4",
+                    borderRadius: "2px",
+                    overflow: "hidden",
+                  }}
+                  >
+                    <View style={{
+                      height: "100%",
+                      width: `${Math.min(100, (memberLevel.currentYearScoreFen / memberLevel.nextLevelThresholdFen) * 100)}%`,
+                      background: memberLevel.level >= 3 ? "#C9A878" : "#864D39",
+                    }}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* 联系客服 · 微信原生客服 button · 直接跳微信会话 */}
         <View className="mx-5 mt-4">

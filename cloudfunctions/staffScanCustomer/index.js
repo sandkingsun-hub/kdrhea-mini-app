@@ -121,12 +121,33 @@ exports.main = async (event = {}) => {
       });
     }
 
+    // 累加贡献分 + 跑等级升级判定 · 不阻塞主流程
+    let levelUpgrade = null;
+    try {
+      const upgradeRes = await cloud.callFunction({
+        name: 'recordContribution',
+        data: {
+          customerOpenid,
+          deltaFen: amountFen,
+          source: 'consume',
+          refId: callerOpenid,
+          description: `线下消费 ¥${(amountFen / 100).toFixed(2)}`,
+        },
+      });
+      if (upgradeRes.result?.ok) {
+        levelUpgrade = upgradeRes.result;
+      }
+    } catch (e) {
+      console.warn('recordContribution failed:', e);
+    }
+
     return {
       ok: r.result?.ok || false,
       action,
       amountFen,
       pointsEarned: earnPoints,
       balanceAfter: r.result?.balanceAfter,
+      levelUpgrade,
       detail: r.result,
     };
   }
