@@ -1,0 +1,6 @@
+{
+  "triggers": [],
+  "timeout": 60,
+  "envVariables": {},
+  "permissions": { "openAccess": [] }
+}
