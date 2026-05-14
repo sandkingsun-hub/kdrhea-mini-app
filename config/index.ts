@@ -40,6 +40,9 @@ export default defineConfig(async (merge) => {
     },
     copy: {
       patterns: [
+        // 把整个 src/assets/ 复制到 dist/<env>/assets/
+        // 之前 share-cover 也未被复制 · 顺带修
+        { from: "src/assets/", to: `dist/${process.env.TARO_ENV}/assets/` },
       ],
       options: {
       },

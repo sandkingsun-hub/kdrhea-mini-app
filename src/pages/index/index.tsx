@@ -37,7 +37,7 @@ function fenToYuan(n: number): string {
 const QUICK_ENTRIES = [
   { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约", route: "/pages/appointment/new" },
   { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "" },
-  { key: "journal", icon: "i-mdi-book-open-variant", label: "美学日记", route: "" },
+  { key: "medicine", icon: "i-mdi-pill", label: "药品记录", route: "" },
   { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "/pages/coupons/index" },
 ];
 
@@ -210,6 +210,95 @@ export default function Index() {
               </Text>
             </View>
           ))}
+        </View>
+
+        {/* === 公益认领 banner · 入口接 charity-home === */}
+        <View
+          className="mx-5 mt-8 px-5 py-5"
+          style={{
+            background: "#F0C0A8",
+            borderRadius: "16px",
+            position: "relative",
+            overflow: "hidden",
+          }}
+          onClick={() => Taro.navigateTo({ url: "/pages/charity-home/index" })}
+        >
+          {/* 装饰圆 · 错位 */}
+          <View style={{
+            position: "absolute",
+            top: "-20px",
+            right: "-16px",
+            width: "100px",
+            height: "100px",
+            borderRadius: "50%",
+            background: "rgba(192,120,96,0.4)",
+          }}
+          />
+          <View style={{
+            position: "absolute",
+            bottom: "-30px",
+            left: "-20px",
+            width: "80px",
+            height: "80px",
+            borderRadius: "50%",
+            background: "rgba(168,72,48,0.18)",
+          }}
+          />
+
+          <View style={{ position: "relative", zIndex: 2 }}>
+            <Text
+              className="block"
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.34em",
+                textTransform: "uppercase",
+                color: "#A84830",
+                fontWeight: 600,
+                marginBottom: "10px",
+              }}
+            >
+              KINDNESS
+            </Text>
+            <Text
+              className="block"
+              style={{
+                fontFamily: "var(--kd-font-display)",
+                fontSize: "22px",
+                lineHeight: "1.2",
+                color: "#3C2218",
+                fontWeight: 500,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              用积分 · 认领一份
+              {" "}
+              <Text style={{ fontStyle: "italic", color: "#864D39" }}>温柔</Text>
+            </Text>
+            <Text
+              className="mt-2 block"
+              style={{
+                fontSize: "11.5px",
+                color: "#5E3425",
+                letterSpacing: "0.04em",
+                lineHeight: "1.6",
+                opacity: 0.85,
+              }}
+            >
+              KDRHEA 1:1 同等配捐 · 与你一同送达救助伙伴
+            </Text>
+            <View
+              className="mt-4 inline-block"
+              style={{
+                padding: "6px 14px",
+                background: "#3C2218",
+                borderRadius: "999px",
+              }}
+            >
+              <Text style={{ fontSize: "11px", color: "#F0C0A8", letterSpacing: "0.08em", fontWeight: 600 }}>
+                认领一只 →
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* === 治疗服务列表 === */}

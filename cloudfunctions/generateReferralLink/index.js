@@ -19,7 +19,7 @@ function genCode() {
   return s;
 }
 
-const ALLOWED_CHANNELS = new Set(['aesthetic_journal', 'direct_share', 'qr_in_store']);
+const ALLOWED_CHANNELS = new Set(['aesthetic_journal', 'direct_share', 'qr_in_store', 'charity']);
 
 exports.main = async (event) => {
   const wxContext = cloud.getWXContext();

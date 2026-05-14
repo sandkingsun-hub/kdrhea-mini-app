@@ -20,6 +20,7 @@ const ALLOWED_TYPES = new Set([
   'spend_deduct',
   'spend_redeem_sku',
   'spend_gift',
+  'spend_charity_claim',
   'admin_adjust',
 ]);
 

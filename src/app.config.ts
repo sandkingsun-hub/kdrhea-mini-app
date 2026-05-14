@@ -23,6 +23,9 @@ export default defineAppConfig({
     ADAPTED_PAGES[RouteNames.PRIVACY_POLICY],
     ADAPTED_PAGES[RouteNames.USER_AGREEMENT],
     ADAPTED_PAGES[RouteNames.DEVTOOLS],
+    ADAPTED_PAGES[RouteNames.CHARITY_HOME],
+    ADAPTED_PAGES[RouteNames.CHARITY_DETAIL],
+    ADAPTED_PAGES[RouteNames.CHARITY_CERT],
   ],
   window: {
     navigationStyle: "custom",
