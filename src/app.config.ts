@@ -1,6 +1,7 @@
 import { ADAPTED_PAGES, RouteNames } from "~/constants/routes";
 
 export default defineAppConfig({
+  __usePrivacyCheck__: true,
   pages: [
     ADAPTED_PAGES[RouteNames.HOME],
     ADAPTED_PAGES[RouteNames.CARE],
@@ -26,6 +27,8 @@ export default defineAppConfig({
     ADAPTED_PAGES[RouteNames.CHARITY_HOME],
     ADAPTED_PAGES[RouteNames.CHARITY_DETAIL],
     ADAPTED_PAGES[RouteNames.CHARITY_CERT],
+    ADAPTED_PAGES[RouteNames.MY_MEDICINES],
+    ADAPTED_PAGES[RouteNames.STAFF_MEDICINE_SCANNER],
   ],
   window: {
     navigationStyle: "custom",

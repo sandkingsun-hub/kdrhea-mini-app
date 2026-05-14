@@ -37,7 +37,7 @@ function fenToYuan(n: number): string {
 const QUICK_ENTRIES = [
   { key: "appointment", icon: "i-mdi-calendar-clock", label: "预约", route: "/pages/appointment/new" },
   { key: "invite", icon: "i-mdi-share-variant", label: "邀请好友", route: "" },
-  { key: "medicine", icon: "i-mdi-pill", label: "药品记录", route: "" },
+  { key: "medicine", icon: "i-mdi-pill", label: "药品记录", route: "/pages/my-medicines/index" },
   { key: "vouchers", icon: "i-mdi-ticket-percent", label: "我的优惠", route: "/pages/coupons/index" },
 ];
 
@@ -97,20 +97,6 @@ export default function Index() {
     }
   });
 
-  if (showPrivacyPolicy) {
-    return (
-      <PageWrapper navTitle="KDRHEA" className="h-full" shouldShowBottomActions={false}>
-        <PrivacyPolicyPopup
-          open={showPrivacyPolicy}
-          onClose={() => {
-            setShowPrivacyPolicy(false);
-            loadHome();
-          }}
-        />
-      </PageWrapper>
-    );
-  }
-
   return (
     <PageWrapper
       navTitle="KDRHEA"
@@ -118,6 +104,13 @@ export default function Index() {
 
       shouldShowBottomActions={false}
     >
+      <PrivacyPolicyPopup
+        open={showPrivacyPolicy}
+        onClose={() => {
+          setShowPrivacyPolicy(false);
+          loadHome();
+        }}
+      />
       <View className="min-h-screen bg-kd-paper pb-24">
         {/* === 顶部城市选择（精简）=== */}
         <View className="flex items-center justify-end px-5 pb-1 pt-3">

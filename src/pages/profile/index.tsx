@@ -230,6 +230,12 @@ export default function Profile() {
                 staff
                 onClick={() => Taro.navigateTo({ url: "/pages/staff/grant-coupon" })}
               />
+              <MenuItem
+                icon="i-mdi-pill"
+                label="员工扫药"
+                staff
+                onClick={() => Taro.navigateTo({ url: "/pages/staff/medicine-scanner" })}
+              />
             </>
           )}
         </View>

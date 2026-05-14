@@ -24,6 +24,8 @@ export enum RouteNames {
   CHARITY_HOME = "CHARITY_HOME",
   CHARITY_DETAIL = "CHARITY_DETAIL",
   CHARITY_CERT = "CHARITY_CERT",
+  MY_MEDICINES = "MY_MEDICINES",
+  STAFF_MEDICINE_SCANNER = "STAFF_MEDICINE_SCANNER",
 }
 
 // 页面路径常量
@@ -52,6 +54,8 @@ export const PAGES = {
   [RouteNames.CHARITY_HOME]: "/pages/charity-home/index",
   [RouteNames.CHARITY_DETAIL]: "/pages/charity-detail/index",
   [RouteNames.CHARITY_CERT]: "/pages/charity-cert/index",
+  [RouteNames.MY_MEDICINES]: "/pages/my-medicines/index",
+  [RouteNames.STAFF_MEDICINE_SCANNER]: "/pages/staff/medicine-scanner",
 } as const;
 
 /**
