@@ -1,5 +1,5 @@
 // listMyMedicineRecords · 顾客看自己的药品扫码历史
-// 入: { limit?: 30, skip?: 0, appointmentId? (按预约 filter) }
+// 入: { limit?: 30, skip?: 0, checkInId? (按到店打卡 filter) }
 // 出: { ok, items: [{ ...treatment_medicine + medicine }], total }
 const cloud = require("wx-server-sdk");
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -10,12 +10,12 @@ exports.main = async (event = {}) => {
   const openid = wxContext.OPENID;
   if (!openid) return { ok: false, code: "NO_OPENID" };
 
-  const { limit = 30, skip = 0, appointmentId } = event;
+  const { limit = 30, skip = 0, checkInId } = event;
   const cap = Math.min(Number(limit) || 30, 100);
   const sk = Math.max(Number(skip) || 0, 0);
 
   const where = { _openid: openid };
-  if (appointmentId) where.appointmentId = appointmentId;
+  if (checkInId) where.checkInId = checkInId;
 
   let list = [];
   let total = 0;
@@ -58,8 +58,8 @@ exports.main = async (event = {}) => {
       expireDate: t.expireDate,
       sn: t.sn,
       mfgDate: t.mfgDate,
-      appointmentId: t.appointmentId,
-      appointmentSnapshot: t.appointmentSnapshot,
+      checkInId: t.checkInId || null,
+      checkInSnapshot: t.checkInSnapshot || null,
       scannedAt: t.scannedAt,
     };
   });

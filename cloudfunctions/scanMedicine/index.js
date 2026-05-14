@@ -1,7 +1,8 @@
 // scanMedicine · 扫码记录治疗用药/器械
-// 模式 A · 顾客自扫: 入 {gsString, appointmentId?} · patient = caller openid
-// 模式 B · staff 代扫: 入 {gsString, customerOpenid, appointmentId?} · staff/admin 才能用 · patient = customerOpenid
-// 出: { ok, medicine, batchInfo, treatmentMedicineId, appointmentId, isPending, mode }
+// 模式 A · 顾客自扫: 入 {gsString} · patient = caller openid
+// 模式 B · staff 代扫: 入 {gsString, customerOpenid} · staff/admin 才能用 · patient = customerOpenid
+// 关联：找该顾客「当日（北京时间 YYYY-MM-DD）到店 check_in」· 没打卡则散单
+// 出: { ok, medicine, batchInfo, treatmentMedicineId, checkInId, checkInSnapshot, isPending, mode }
 const cloud = require("wx-server-sdk");
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -117,7 +118,7 @@ exports.main = async (event = {}) => {
   const callerOpenid = wxContext.OPENID;
   if (!callerOpenid) return { ok: false, code: "NO_OPENID" };
 
-  const { gsString, appointmentId: appointmentIdInput, customerOpenid: customerOpenidInput } = event;
+  const { gsString, customerOpenid: customerOpenidInput } = event;
   if (!gsString || typeof gsString !== "string") return { ok: false, code: "MISSING_GS_STRING" };
 
   // 模式判定 · staff 代扫需校验角色
@@ -189,43 +190,33 @@ exports.main = async (event = {}) => {
     isPending = medicine.status === "pending";
   }
 
-  // 3. 解析 appointmentId
-  let appointmentId = (typeof appointmentIdInput === "string" && appointmentIdInput.trim()) ? appointmentIdInput.trim() : null;
-  let appointmentSnapshot = null;
-
-  if (!appointmentId) {
-    // 兜底 · 找该顾客最近一次未取消的预约 (不限时间窗口)
-    try {
-      const r = await db
-        .collection("appointments")
-        .where({
-          _openid: patientOpenid,
-          status: _.nin(["cancelled", "canceled"]),
-        })
-        .orderBy("createdAt", "desc")
-        .limit(1)
-        .get();
-      if (r.data.length > 0) appointmentId = r.data[0]._id;
-    } catch {}
+  // 3. 关联到顾客「当日 check_in」· 替代之前的 appointment 关联
+  // 工作日划分：北京时间 calendar date (YYYY-MM-DD)
+  function getBeijingDateStr(d = new Date()) {
+    return new Date(d.getTime() + 8 * 3600 * 1000).toISOString().slice(0, 10);
   }
+  const todayStr = getBeijingDateStr();
+  let checkInId = null;
+  let checkInSnapshot = null;
 
-  if (appointmentId) {
-    try {
-      const r = await db.collection("appointments").doc(appointmentId).get();
-      if (r.data && r.data._openid === patientOpenid) {
-        appointmentSnapshot = {
-          status: r.data.status,
-          serviceName: r.data.serviceName || r.data.service || null,
-          appointmentTime: r.data.appointmentTime || r.data.date || null,
-          createdAt: r.data.createdAt,
-        };
-      } else {
-        appointmentId = null;
-      }
-    } catch {
-      appointmentId = null;
+  try {
+    const r = await db
+      .collection("check_ins")
+      .where({ customerOpenid: patientOpenid, dateStr: todayStr })
+      .orderBy("checkedInAt", "desc")
+      .limit(1)
+      .get();
+    if (r.data.length > 0) {
+      const ci = r.data[0];
+      checkInId = ci._id;
+      checkInSnapshot = {
+        dateStr: ci.dateStr,
+        checkedInAt: ci.checkedInAt,
+        staffOpenid: ci.staffOpenid,
+        pointsGranted: ci.pointsGranted,
+      };
     }
-  }
+  } catch {}
 
   // 4. 写 treatment_medicines · 一物一条记录 · _openid = patient (顾客)
   const tmDoc = {
@@ -239,8 +230,8 @@ exports.main = async (event = {}) => {
     sn: parsed.sn || null,
     mfgDate: parsed.mfgDate || null,
     rawCode: parsed.raw,
-    appointmentId,
-    appointmentSnapshot,
+    checkInId,                          // 关联到顾客当日到店打卡 · 没打卡则散单
+    checkInSnapshot,
     scannedAt: now,
     scannedBy: callerOpenid,           // 实际操作人 (顾客自扫=患者本人 · staff 代扫=员工)
     scannerRole,                        // customer | staff | admin
@@ -265,8 +256,8 @@ exports.main = async (event = {}) => {
       sn: parsed.sn,
       mfgDate: parsed.mfgDate,
     },
-    appointmentId,
-    appointmentSnapshot,
+    checkInId,
+    checkInSnapshot,
     isPending,
     mode,
     patientOpenid: mode === "staff_proxy" ? patientOpenid : undefined,

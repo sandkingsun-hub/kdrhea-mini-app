@@ -3,7 +3,7 @@ import type { MedicineRecord } from "~/lib/medicineCloud";
 // 顾客扫码记录治疗用过的药品/器械 · GS1 解析 + medicines 主表自动 pending 状态
 import { Button, Text, View } from "@tarojs/components";
 import Taro, { useDidShow, useLoad } from "@tarojs/taro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PageWrapper from "~/components/PageWrapper";
 import { medicineCloud } from "~/lib/medicineCloud";
 
@@ -39,11 +39,40 @@ function fmtExpireBadge(date: string | null | undefined): { text: string; color:
   }
 }
 
+interface TreatmentGroup {
+  key: string;
+  checkInId: string | null;
+  checkIn: MedicineRecord["checkInSnapshot"] | null;
+  items: MedicineRecord[];
+}
+
 export default function MyMedicinesPage() {
   const [items, setItems] = useState<MedicineRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
+
+  // 按 checkInId 聚合 · 一次到店 = 一张治疗卡 · 没打卡 = 散单
+  const groupedTreatments = useMemo<TreatmentGroup[]>(() => {
+    const map = new Map<string, TreatmentGroup>();
+    items.forEach((r) => {
+      const key = r.checkInId || "__other__";
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          checkInId: r.checkInId || null,
+          checkIn: r.checkInSnapshot || null,
+          items: [],
+        });
+      }
+      map.get(key)!.items.push(r);
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const aTime = a.items[0]?.scannedAt || "";
+      const bTime = b.items[0]?.scannedAt || "";
+      return bTime.localeCompare(aTime);
+    });
+  }, [items]);
 
   const load = async () => {
     setLoading(true);
@@ -209,7 +238,7 @@ export default function MyMedicinesPage() {
           </Text>
         </View>
 
-        {/* 列表 */}
+        {/* 按到店打卡聚合的治疗档案 */}
         <View className="mt-6">
           {loading ? (
             <View className="text-center" style={{ padding: "40px 0", color: "var(--kd-brown-600)" }}>
@@ -225,115 +254,158 @@ export default function MyMedicinesPage() {
               </Text>
             </View>
           ) : (
-            items.map((r) => {
-              const expire = fmtExpireBadge(r.expireDate);
-              return (
-                <View
-                  key={r._id}
-                  className="mx-6 mb-3"
-                  style={{
-                    background: "var(--white)",
-                    borderRadius: "14px",
-                    padding: "14px 16px",
-                    border: "1px solid rgba(61,36,24,0.06)",
-                  }}
-                >
-                  {/* 名字 / 待补充 */}
-                  <View style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    <Text
-                      className="kd-display"
-                      style={{
-                        fontSize: "15px",
-                        fontWeight: 500,
-                        color: "var(--kd-brown-900)",
-                      }}
-                    >
-                      {r.name || "待补充信息"}
-                    </Text>
-                    {r.pending && (
-                      <Text style={{
-                        fontSize: "10px",
-                        padding: "2px 6px",
-                        background: "#F5EDE3",
-                        color: "#864D39",
-                        borderRadius: "4px",
-                        letterSpacing: "0.04em",
-                      }}
+            groupedTreatments.map(group => (
+              <View
+                key={group.key}
+                className="mx-6 mb-5"
+                style={{
+                  background: "var(--white)",
+                  borderRadius: "14px",
+                  padding: "16px 16px 14px",
+                  border: "1px solid rgba(61,36,24,0.06)",
+                }}
+              >
+                {/* 卡片头 · 到店打卡信息 */}
+                <View style={{ paddingBottom: "12px", borderBottom: "1px solid var(--kd-hairline)" }}>
+                  {group.checkInId ? (
+                    <>
+                      <Text
+                        className="block"
+                        style={{
+                          fontSize: "9.5px",
+                          letterSpacing: "0.24em",
+                          color: "#864D39",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          marginBottom: "4px",
+                        }}
                       >
-                        待补充
+                        VISIT · 到店治疗
                       </Text>
-                    )}
-                  </View>
-
-                  {/* spec / 注册人 */}
-                  {(r.spec || r.registrantName) && (
-                    <Text
-                      className="block"
-                      style={{
-                        marginTop: "2px",
-                        fontSize: "11px",
-                        color: "var(--kd-brown-600)",
-                      }}
-                    >
-                      {[r.spec, r.registrantName].filter(Boolean).join(" · ")}
-                    </Text>
+                      <View style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <Text
+                          className="kd-display"
+                          style={{ fontSize: "15px", color: "var(--kd-brown-900)", fontWeight: 500 }}
+                        >
+                          {group.checkIn?.dateStr || "到店治疗"}
+                        </Text>
+                        <Text style={{ fontSize: "10.5px", color: "var(--kd-brown-600)" }}>
+                          {group.checkIn?.checkedInAt ? fmtDateTime(group.checkIn.checkedInAt) : "—"}
+                        </Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text
+                        className="block"
+                        style={{
+                          fontSize: "9.5px",
+                          letterSpacing: "0.24em",
+                          color: "#937761",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        OTHER · 散单
+                      </Text>
+                      <Text
+                        className="kd-display"
+                        style={{ fontSize: "15px", color: "var(--kd-brown-900)", fontWeight: 500 }}
+                      >
+                        未关联到店打卡
+                      </Text>
+                    </>
                   )}
-
-                  {/* 批号 / 序列号 */}
-                  <View style={{ marginTop: "8px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                    {r.batchNo && (
-                      <Text style={{ fontSize: "11px", color: "var(--kd-brown-700)", fontFamily: "Menlo, monospace" }}>
-                        批号
-                        {" "}
-                        {r.batchNo}
-                      </Text>
-                    )}
-                    {r.sn && (
-                      <Text style={{ fontSize: "11px", color: "var(--kd-brown-700)", fontFamily: "Menlo, monospace" }}>
-                        SN
-                        {" "}
-                        {r.sn}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* 有效期 badge */}
-                  {expire && (
-                    <Text
-                      className="block"
-                      style={{
-                        marginTop: "6px",
-                        fontSize: "10.5px",
-                        color: expire.color,
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {expire.text}
-                    </Text>
-                  )}
-
-                  {/* 底部 · 关联预约 + 扫码时间 */}
-                  <View style={{
-                    marginTop: "10px",
-                    paddingTop: "10px",
-                    borderTop: "1px solid var(--kd-hairline)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
+                  <Text
+                    className="mt-2 block"
+                    style={{ fontSize: "10.5px", color: "var(--kd-brown-600)", letterSpacing: "0.04em" }}
                   >
-                    <Text style={{ fontSize: "10.5px", color: "var(--kd-brown-600)", letterSpacing: "0.04em" }}>
-                      {r.appointmentId
-                        ? `📋 ${r.appointmentSnapshot?.serviceName || "治疗预约"}`
-                        : "📋 散单"}
-                    </Text>
-                    <Text style={{ fontSize: "10.5px", color: "var(--kd-brown-500)" }}>
-                      {fmtDateTime(r.scannedAt)}
-                    </Text>
-                  </View>
+                    共
+                    {" "}
+                    {group.items.length}
+                    {" "}
+                    支
+                  </Text>
                 </View>
-              );
-            })
+
+                {/* 药品清单 · 紧凑版 */}
+                {group.items.map((r) => {
+                  const expire = fmtExpireBadge(r.expireDate);
+                  return (
+                    <View
+                      key={r._id}
+                      style={{ paddingTop: "12px", paddingBottom: "8px", borderBottom: "1px dashed var(--kd-hairline)" }}
+                    >
+                      <View style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <Text
+                          style={{
+                            fontSize: "13.5px",
+                            color: "var(--kd-brown-900)",
+                            fontWeight: 500,
+                          }}
+                        >
+                          💉
+                          {" "}
+                          {r.name || "待补充信息"}
+                        </Text>
+                        {r.pending && (
+                          <Text style={{
+                            fontSize: "9.5px",
+                            padding: "1px 5px",
+                            background: "#F5EDE3",
+                            color: "#864D39",
+                            borderRadius: "3px",
+                          }}
+                          >
+                            待补充
+                          </Text>
+                        )}
+                      </View>
+
+                      {(r.spec || r.registrantName) && (
+                        <Text
+                          className="mt-1 block"
+                          style={{ fontSize: "10.5px", color: "var(--kd-brown-600)" }}
+                        >
+                          {[r.spec, r.registrantName].filter(Boolean).join(" · ")}
+                        </Text>
+                      )}
+
+                      <View style={{ marginTop: "5px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                        {r.batchNo && (
+                          <Text style={{ fontSize: "10px", color: "var(--kd-brown-700)", fontFamily: "Menlo, monospace" }}>
+                            批号
+                            {" "}
+                            {r.batchNo}
+                          </Text>
+                        )}
+                        {r.sn && (
+                          <Text style={{ fontSize: "10px", color: "var(--kd-brown-700)", fontFamily: "Menlo, monospace" }}>
+                            SN
+                            {" "}
+                            {r.sn}
+                          </Text>
+                        )}
+                        {expire && (
+                          <Text style={{ fontSize: "10px", color: expire.color }}>
+                            {expire.text}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+
+                <View style={{ paddingTop: "8px" }}>
+                  <Text style={{ fontSize: "9.5px", color: "var(--kd-brown-500)", letterSpacing: "0.04em" }}>
+                    最近扫码
+                    {" "}
+                    {fmtDateTime(group.items[0]?.scannedAt || "")}
+                  </Text>
+                </View>
+              </View>
+            ))
           )}
         </View>
       </View>

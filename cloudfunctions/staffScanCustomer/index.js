@@ -21,6 +21,19 @@ async function getMyRole(openid) {
   return q.data[0]?.role || 'customer';
 }
 
+// 北京时间 YYYY-MM-DD · 云函数环境是 UTC · 偏移 +8h
+function getBeijingDateStr(date = new Date()) {
+  const ms = date.getTime() + 8 * 3600 * 1000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+async function ensureCollection(name) {
+  try { await db.collection(name).count(); }
+  catch (e) {
+    if (String(e).includes('not exist')) try { await db.createCollection(name); } catch {}
+  }
+}
+
 exports.main = async (event = {}) => {
   const wxContext = cloud.getWXContext();
   const callerOpenid = wxContext.OPENID;
@@ -143,22 +156,70 @@ exports.main = async (event = {}) => {
 
   if (action === 'reward_in_store_qr') {
     const grant = points && points > 0 ? points : 500;
+    const now = new Date();
+    const dateStr = getBeijingDateStr(now);
+
+    await ensureCollection('check_ins');
+
+    // 同日限频 · 一个工作日（北京时间 calendar date）只允许一次到店打卡
+    const existing = await db.collection('check_ins')
+      .where({ customerOpenid, dateStr })
+      .limit(1)
+      .get();
+    if (existing.data.length > 0) {
+      return {
+        ok: false,
+        code: 'CHECKIN_TOO_FREQUENT',
+        message: '该顾客今日已打过卡',
+        dateStr,
+        existingCheckIn: {
+          _id: existing.data[0]._id,
+          checkedInAt: existing.data[0].checkedInAt,
+        },
+      };
+    }
+
+    // 1. 创建 check_in 记录（占位）
+    const checkInDoc = {
+      customerOpenid,
+      staffOpenid: callerOpenid,
+      dateStr,
+      checkedInAt: now.toISOString(),
+      pointsGranted: grant,
+      pointsLogId: null, // 下一步回填
+    };
+    const addRes = await db.collection('check_ins').add({ data: checkInDoc });
+    const checkInId = addRes._id;
+
+    // 2. 调 earnPoints 发积分 · refType 引用 check_in
     const r = await cloud.callFunction({
       name: 'earnPoints',
       data: {
         targetOpenid: customerOpenid,
         delta: grant,
         type: 'earn_in_store_qr',
-        refType: 'in_store_checkin',
-        refId: callerOpenid,
+        refType: 'check_in',
+        refId: checkInId,
         description: description || `到店打卡 +${grant} 积分`,
       },
     });
+
+    // 3. 把 pointsLogId 回填到 check_in（如果 earnPoints 成功）
+    if (r.result?.ok && r.result?.logId) {
+      try {
+        await db.collection('check_ins').doc(checkInId).update({
+          data: { pointsLogId: r.result.logId },
+        });
+      } catch {}
+    }
+
     return {
       ok: r.result?.ok || false,
       action,
+      checkInId,
       pointsEarned: grant,
       balanceAfter: r.result?.balanceAfter,
+      dateStr,
       detail: r.result,
     };
   }

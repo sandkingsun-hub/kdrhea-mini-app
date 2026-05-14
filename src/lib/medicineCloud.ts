@@ -8,6 +8,13 @@ export interface ScannedMedicine {
   status?: "complete" | "pending";
 }
 
+export interface CheckInSnapshot {
+  dateStr?: string;
+  checkedInAt?: string;
+  staffOpenid?: string;
+  pointsGranted?: number;
+}
+
 export interface MedicineRecord {
   _id: string;
   medicineKey: string;
@@ -21,12 +28,8 @@ export interface MedicineRecord {
   expireDate?: string | null;
   sn?: string | null;
   mfgDate?: string | null;
-  appointmentId?: string | null;
-  appointmentSnapshot?: {
-    status?: string;
-    serviceName?: string | null;
-    appointmentTime?: string | null;
-  } | null;
+  checkInId?: string | null;
+  checkInSnapshot?: CheckInSnapshot | null;
   scannedAt: string;
 }
 
@@ -59,7 +62,7 @@ export interface CustomerCandidate {
 }
 
 export const medicineCloud = {
-  async scan(gsString: string, opts?: { appointmentId?: string; customerOpenid?: string }) {
+  async scan(gsString: string, opts?: { customerOpenid?: string }) {
     return call<{
       ok: boolean;
       code?: string;
@@ -72,22 +75,17 @@ export const medicineCloud = {
         sn?: string | null;
         mfgDate?: string | null;
       };
-      appointmentId?: string | null;
-      appointmentSnapshot?: {
-        serviceName?: string | null;
-        appointmentTime?: string | null;
-        status?: string;
-      } | null;
+      checkInId?: string | null;
+      checkInSnapshot?: CheckInSnapshot | null;
       isPending?: boolean;
       mode?: "self" | "staff_proxy";
     }>("scanMedicine", {
       gsString,
-      appointmentId: opts?.appointmentId,
       customerOpenid: opts?.customerOpenid,
     });
   },
 
-  async listMyRecords(opts?: { limit?: number; skip?: number; appointmentId?: string }) {
+  async listMyRecords(opts?: { limit?: number; skip?: number; checkInId?: string }) {
     const r = await call<{ ok: boolean; items?: MedicineRecord[]; total?: number }>(
       "listMyMedicineRecords",
       opts || {},
