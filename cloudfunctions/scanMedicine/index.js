@@ -83,8 +83,15 @@ function parseGS1(input) {
     else if (len === 13) result.gtin = "0" + raw;        // EAN-13 → GTIN-14 (国内常见医疗耗材)
     else if (len === 12) result.gtin = "00" + raw;       // UPC-A → GTIN-14
     else if (len === 8) result.gtin = "000000" + raw;    // GTIN-8 → GTIN-14
-    else if (len === 20) result.drugCode = raw;           // 国家药品监管码
-    else if (len >= 16 && len <= 22) result.drugCode = raw; // 国内非标 UDI 容差
+    else if (len === 20) {
+      // 中国药品追溯码 = 7 位药品标识码 + 13 位序列号
+      // 药品标识码永久不变 · 用作 medicines._id（同款药聚合到一条）
+      // 序列号每瓶变 · 写入 treatment_medicines.sn
+      result.drugProductCode = raw.slice(0, 7);
+      result.drugSerialNo = raw.slice(7);
+      result.fullTraceCode = raw;
+    }
+    else if (len >= 16 && len <= 22) result.drugCode = raw; // 国内非标 UDI 容差 · 整段当标识
   }
 
   return result;
@@ -142,16 +149,30 @@ exports.main = async (event = {}) => {
 
   // 1. 解析 GS1
   const parsed = parseGS1(gsString);
-  if (!parsed || (!parsed.gtin && !parsed.drugCode)) {
+  if (!parsed || (!parsed.gtin && !parsed.drugCode && !parsed.drugProductCode)) {
     return { ok: false, code: "PARSE_FAILED", raw: gsString, parsed };
   }
 
   await ensureCollection("medicines");
   await ensureCollection("treatment_medicines");
 
-  // 2. 查/建 medicines 主记录
-  const key = parsed.gtin || parsed.drugCode;
-  const codeType = parsed.gtin ? "GTIN" : "DRUG_CODE";
+  // 2. 决定 medicineKey（永久商品标识）+ codeType
+  //   - GS1 GTIN-14 → key = gtin
+  //   - 20 位中国药品追溯码 → key = 前 7 位药品标识码（同款药聚合 · 序列号写入流水）
+  //   - 16-19 / 21-22 位非标 UDI → key = 完整码（整段当标识）
+  let key, codeType;
+  if (parsed.gtin) {
+    key = parsed.gtin;
+    codeType = "GTIN";
+  } else if (parsed.drugProductCode) {
+    key = parsed.drugProductCode;
+    codeType = "DRUG_TRACE";
+    // 把追溯码序列号塞到 parsed.sn（如果 GS1 没解出来 sn）
+    if (!parsed.sn) parsed.sn = parsed.drugSerialNo;
+  } else {
+    key = parsed.drugCode;
+    codeType = "DRUG_CODE";
+  }
 
   let medicine = null;
   try {
@@ -225,6 +246,8 @@ exports.main = async (event = {}) => {
     codeType,
     gtin: parsed.gtin || null,
     drugCode: parsed.drugCode || null,
+    drugProductCode: parsed.drugProductCode || null,  // 药品追溯码的前 7 位（= medicines._id）
+    fullTraceCode: parsed.fullTraceCode || null,       // 完整 20 位追溯码
     batchNo: parsed.batchNo || null,
     expireDate: parsed.expireDate || null,
     sn: parsed.sn || null,
