@@ -133,6 +133,24 @@ export default function AppointmentNew() {
     setSubmitting(false);
     if (r?.ok) {
       Taro.showToast({ title: "申请已提交", icon: "success" });
+
+      // 弹订阅消息授权 · 顾客同意后我们能在 24h 前推送
+      const TEMPLATE_ID = process.env.TARO_APP_WX_TEMPLATE_REMIND || "ihiIWdBcjupzX1Fx9aFlmqbamuhE7m_VN6IohCBvfNI";
+      if (TEMPLATE_ID) {
+        try {
+          // @ts-expect-error wx.requestSubscribeMessage 由微信注入
+          const sub = await wx.requestSubscribeMessage({ tmplIds: [TEMPLATE_ID] });
+          const accepted = Object.entries(sub || {})
+            .filter(([k, v]) => k !== "errMsg" && v === "accept")
+            .map(([k]) => k);
+          if (accepted.length > 0) {
+            await callCloud("subscribeReminder", { templateIds: accepted });
+          }
+        } catch {
+          // 顾客拒绝 / 接口未配置 · 不影响主流程
+        }
+      }
+
       setTimeout(() => {
         const pages = Taro.getCurrentPages();
         if (pages.length > 1) {
@@ -140,7 +158,7 @@ export default function AppointmentNew() {
         } else {
           Taro.redirectTo({ url: "/pages/appointment/list" });
         }
-      }, 1000);
+      }, 1500);
     } else {
       const map: Record<string, string> = {
         DUPLICATE_RECENT: "近 24 小时已提交相同申请",

@@ -1,0 +1,10 @@
+{
+  "permissions": { "openapi": ["subscribeMessage.send"] },
+  "triggers": [
+    {
+      "name": "appointmentReminder",
+      "type": "timer",
+      "config": "0 */30 * * * *"
+    }
+  ]
+}

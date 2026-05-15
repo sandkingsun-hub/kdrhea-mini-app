@@ -1,0 +1,9 @@
+{
+  "name": "sendSms",
+  "version": "0.1.0",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest",
+    "tencentcloud-sdk-nodejs": "^4.0.0"
+  }
+}
