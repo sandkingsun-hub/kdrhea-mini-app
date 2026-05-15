@@ -80,15 +80,32 @@ exports.main = async (event = {}) => {
 
   if (action === "delete") {
     if (!medicineKey) return { ok: false, code: "MISSING_KEY" };
-    // 检查是否有 treatment_medicines 在用
+    const force = event.force === true;
+    let usedCount = 0;
     try {
       const used = await db.collection("treatment_medicines").where({ medicineKey }).count();
-      if (used.total > 0) {
-        return { ok: false, code: "MEDICINE_IN_USE", usedBy: used.total, message: `还有 ${used.total} 条治疗记录引用此 medicine · 不能删` };
-      }
+      usedCount = used.total || 0;
     } catch {}
+
+    if (usedCount > 0 && !force) {
+      return {
+        ok: false,
+        code: "MEDICINE_IN_USE",
+        usedBy: usedCount,
+        message: `还有 ${usedCount} 条治疗记录引用此 medicine · 不能删（可加 force:true 级联删除）`,
+      };
+    }
+
+    // force=true · 级联删除 treatment_medicines
+    let cascadedTreatments = 0;
+    if (force && usedCount > 0) {
+      try {
+        const r = await db.collection("treatment_medicines").where({ medicineKey }).remove();
+        cascadedTreatments = r.stats?.removed || usedCount;
+      } catch {}
+    }
     await db.collection("medicines").doc(medicineKey).remove();
-    return { ok: true };
+    return { ok: true, force, cascadedTreatments };
   }
 
   return { ok: false, code: "INVALID_ACTION" };
